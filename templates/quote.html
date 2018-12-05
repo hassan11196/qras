@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Register
+{% endblock %}
+
+{% block main %}
+
+    {% if request.method == "POST" %}
+      <p>
+          {{sstr}}
+      </p>
+      <form action="/quote" method = "GET">
+          <button class="btn btn-group" type="submit" onclick="quote.html" > Return </button>
+      </form>
+
+    {% else %}
+    <form action="/quote" method="post">
+        <legend>Enter Symbol of stock to see price.</legend>
+        <div class="form-group">
+            <input class="form-control" name="symbol" placeholder = "Enter Symbol" type = "text">
+        </div>
+        <button class="btn btn-primary" type="submit">Search</button>
+    </form>
+    {% endif %}
+
+{% endblock %}

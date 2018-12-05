@@ -1,0 +1,49 @@
+{% extends "layout.html"%}
+
+<title>
+{%block title%}
+About
+{%endblock%}
+</title>
+{%block main%}
+<div class="jumbotron jumbotron-fluid">
+  <div class="container">
+    <h1 class="display-4">About</h1>
+    <p class="lead">This is a simple stock market simulator web-app designed as a solution to CS50's PSET-7</p>
+    <hr class="my-4">
+    <p>
+        The Following Programming Languages ,frameworks and web-tools were used in its creation.
+    </p>
+    <div align="center" class="list-group">
+        <a href="#" class="list-group-item list-group-item-action flex-column align-items-start">
+            <div class="d-flex w-100 justify-content-between">
+                  <h5 class="mb-1">Python</h5>
+            </div>
+            <p class="mb-1">Programming Language used for scripting backend.</small>
+        </a>
+
+        <a href="#" class="list-group-item list-group-item-action flex-column align-items-start">
+            <div class="d-flex w-100 justify-content-between">
+                  <h5 align="left" class="mb-1">Flask</h5>
+            </div>
+            <p class="mb-1">A micro-framework used to handle server connections and login sessions</small>
+        </a>
+        <a href="#" class="list-group-item list-group-item-action flex-column align-items-start">
+            <div class="d-flex w-100 justify-content-between">
+                  <h5 align="left"  class="mb-1">Jinja</h5>
+            </div>
+            <p class="mb-1">For making dynamic HTML web pages</small>
+        </a>
+        <a href="#" class="list-group-item list-group-item-action flex-column align-items-start">
+            <div class="d-flex w-100 justify-content-between">
+                  <h5 align="left"  class="mb-1">SQLite</h5>
+            </div>
+            <p class="mb-1">Used for Managing internal database using PHPlite-framework.</small>
+        </a>
+    </div>
+
+
+
+  </div>
+</div>
+{%endblock%}

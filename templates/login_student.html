@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Log In - Student
+{% endblock %}
+
+{% block main %}
+    <p>Welcome</p>
+    <br>
+    <form action="/login/student" method="post">
+        <div class="form-group">
+            <input autocomplete="off" autofocus required maxlength="50" class="form-control" name="rollnumber" placeholder="17K-1234" type="text"/>
+        </div>
+        <div class="form-group">
+            <input class="form-control" maxlength="20" required name="password" placeholder="Password" type="password"/>
+        </div>
+        <button class="btn btn-primary" type="submit">Log In</button>
+    </form>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Register - Student
+{% endblock %}
+
+{% block main %}
+    <form action="/register/student" method="POST" id ="comp">
+        <div class="form-group">
+            <input class="form-control" autocomplete="off" autofocus  maxlength="50" required name="student_name" placeholder="Enter Your Name : " type="text"/>
+        </div>
+        <div class="form-group">
+            <input autocomplete="off" maxlength="20" class="form-control" name="rollnumber" required pattern="([0-9]{2}(K|L|I|C|P|k|l|i|c|p)-[0-9]{4})" placeholder="Roll No. (e.g 17K-1234)" type="text"/>
+        </div>
+        <div class="form-group">
+            <input class="form-control" autocomplete="off" maxlength="20" name="batch" required pattern="(20[1-9]{2})" placeholder="Batch (e.g 2017) " type="text"/>
+        </div>
+        <div class="form-group">
+            <input class="form-control" maxlength="20" name="password" required placeholder="Password" type="password"/>
+        </div>
+        <div class="form-group">
+            <input class="form-control" maxlength="20" name="confirmation" required placeholder="Repeat Password" type="password"/>
+        </div>
+
+        <h1 align="left">Please Select Courses :  </h1>
+        <div class="table-responsive">
+                        <table class = "table table-striped table-bordered">
+                            <thead>
+                                <tr>
+                                <th>Sr.#</th>
+                                <th>Course Name</th>
+                                <th>Short Name</th>
+                                <th>Course Code</th>
+                                <th>Section (A/A1/GR1)</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                            {%for i in courses%}
+                            <tr>
+                                <th scope="row">{{i['id']}}.</th>
+                                <td>{{i['course_name'].title()}}</td>
+                                <td>{{i['course_short']}}</td>
+                                <td >{{i['course_code']}}</td>
+                                <td>
+                                <input form="comp" class="form-control" autocomplete="off" name="{{i['course_code']}}" pattern="([A-Z]{1}|[A-Z1-9]{2}|GR[0-9]{1})" size="10" maxlength="5" id="{{i['course_code']}}" placeholder="A or A1 or GR1"/>
+                                </td>
+                            </tr>
+                            {%endfor%}
+                            </tbody>
+                        </table>
+                    </div>
+
+        <button class="btn btn-primary" type="submit" form="comp">Register</button>
+    </form>
+
+
+{% endblock %}

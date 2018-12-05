@@ -1,0 +1,180 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Register - Teacher
+{% endblock %}
+
+{% block main %}
+<script>
+    cour_id_sec = []
+    num_course = 0
+    name_course = "courser"
+</script>
+<form action="/register/teacher" method="POST" id ="comp">
+        <div class="form-group">
+            <input class="form-control" autocomplete="off" maxlength="50" autofocus  name="teacher_mail" placeholder="Enter Your NU Mail " type="email"/>
+        </div>
+        <div class="form-group">
+            <input class="form-control" autocomplete="off" maxlength="50" autofocus  name="teacher_name" placeholder="Enter Your Name " type="text"/>
+        </div>
+        <div class="form-group">
+            <input class="form-control" maxlength="20" name="password" placeholder="Password" type="password"/>
+        </div>
+        <div class="form-group">
+            <input class="form-control" maxlength="20" name="confirmation" placeholder="Repeat Password" type="password"/>
+        </div>
+        <h1 align="left" id="headi">Please Select Courses :  </h1>
+        <div class="table-responsive">
+                        <table class = "table table-striped table-bordered">
+                            <thead>
+                                <tr>
+                                <th>Sr.#</th>
+                                <th>Course Name</th>
+                                <th>Short Name</th>
+                                <th>Course Code</th>
+                                <th>Section (A/A1/GR1)</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                            {%for i in courses%}
+                            <tr>
+                                <th scope="row">{{i['id']}}.</th>
+                                <td>{{i['course_name'].title()}}</td>
+                                <td>{{i['course_short']}}</td>
+                                <td >{{i['course_code']}}</td>
+                                <td>
+                                <input form="comp" class="form-control" name="{{i['course_code']}}" pattern="([A-Z]{1}|[A-Z1-9]{2}|GR[0-9]{1})" size="10" maxlength="5" id="{{i['course_code']}}" placeholder="A or A1 or GR1"/>
+                                </td>
+                            </tr>
+                            {%endfor%}
+                            </tbody>
+                        </table>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                    <th>Course Name</th>
+                    <th>Short Name</th>
+                    <th>Course Code</th>
+                    <th>Section (A/A1/GR1)</th>
+                    <th>Register Course</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <form id="internal">
+                    <tr>
+                        <td >
+                            <select onchange="resp_shorts()" class="form-control" autofocus="on" id="s_cname" name="select_courses">
+
+                                    <option selected>Select Course</option>
+                                    {%for i in courses%}
+                                    <option value = "{{i['id']}}"> {{i["course_name"].title()}} </option>
+                                    {%endfor%}
+
+                                <script>
+                                    function resp_shorts(){
+                                        var course_index = document.getElementById("s_cname").value;
+                                        var sel = document.getElementById("s_cshort");
+                                        sel.selectedIndex=course_index;
+                                        var sel2 = document.getElementById("s_ccode");
+                                        sel2.selectedIndex=course_index;
+                                    }
+
+                                </script>
+                            </select>
+                        </td>
+                        <td>
+                            <select required form="internal" disabled class="form-control" id="s_cshort" name="select_courses_short">
+                                <option id="c_short_select"></option>
+                                {%for i in courses%}
+                                    <option value = "{{i['id']}}"> {{i["course_short"]}} </option>
+                                {%endfor%}
+                            </select>
+                        </td>
+                        <td>
+                            <select disabled class="form-control" id="s_ccode" name="select_courses_code">
+                                <option id="c_code_select"></option>
+                                {%for i in courses%}
+                                    <option value = "{{i['id']}}"> {{i["course_code"]}} </option>
+                                {%endfor%}
+                            </select>
+                        </td>
+                        <td>
+                            <input required form="internal" class="form-control" id="s_csection" pattern="([A-Z]{1}|[A-Z1-9]{2}|GR[0-9]{1})" size="10" maxlength="5" name="c_sec_select" placeholder="A or A1 or GR1"/>
+                        </td>
+                        <td>
+                            <button form="internal" onclick="reg_course()" class="btn" type="button">Register Course</button>
+                            <script>
+
+                            function reg_course(){
+                                if(cour_id_sec.indexOf(document.getElementById("s_ccode")[document.getElementById("s_ccode").value].text + document.getElementById("s_csection").value) >= 0){
+                                    console.log(cour_id_sec.indexOf(document.getElementById("s_ccode")[document.getElementById("s_ccode").value].text + document.getElementById("s_csection").value))
+                                    return;
+                                }
+                                var tabl = document.getElementById("reg_table");
+                                var row = tabl.insertRow();
+                                var col1 = row.insertCell();
+                                var col2 = row.insertCell();
+                                var col3 = row.insertCell();
+                                var col4 = row.insertCell();
+
+
+
+
+                                col1.setAttribute("form", "comp");
+                                col2.setAttribute("form", "comp");
+                                col3.setAttribute("form", "comp");
+                                col4.setAttribute("form", "comp");
+                                col4.setAttribute("class","form-control")
+
+                                col1.setAttribute("name", "n"+name_course+num_course);
+                                col2.setAttribute("name", "s"+name_course+num_course);
+                                col3.setAttribute("name", "c"+name_course+num_course);
+                                col4.setAttribute("name", "sec"+name_course+num_course);
+                                col4.setAttribute("class","form-control")
+                                console.log( name_course+num_course);
+                                num_course++;
+
+                                col1.innerHTML=document.getElementById("s_cname")[document.getElementById("s_cname").value].text;
+                                col2.innerHTML=document.getElementById("s_cshort")[document.getElementById("s_cshort").value].text;
+                                col3.innerHTML=document.getElementById("s_ccode")[document.getElementById("s_ccode").value].text;
+                                col4.innerHTML=document.getElementById("s_csection").value;
+                                cour_id_sec.push(col3.innerHTML + col4.innerHTML);
+                                console.log(cour_id_sec);
+                                console.log(col3);
+                                console.log(col4);
+                            }
+                            </script>
+                        </td>
+                    </tr>
+                    </form>
+                </tbody>
+            </table>
+        </div>
+        <br>
+        <h1 align="left">Registered Courses</h1>
+        <div class="table-responsive">
+            <table class="table table-bordered" id="reg_table" form="comp">
+                <thead>
+                    <tr>
+                    <th>Course Name</th>
+                    <th>Short Name</th>
+                    <th>Course Code</th>
+                    <th>Section (A/A1/GR1)</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                </tbody>
+            </table>
+        </div>
+
+
+        <button class="btn btn-primary" type="submit" form="comp">Register Teacher</button>
+    </form>
+
+
+
+{% endblock %}

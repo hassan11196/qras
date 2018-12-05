@@ -1,0 +1,99 @@
+
+{% extends "layout.html" %}
+
+{% block title %}
+    Teacher
+{% endblock %}
+
+{% block main %}
+
+<script>
+    var course_code_arr_id = [];
+    var course_code_x;
+
+</script>
+
+
+<h1  align = "left"> Registered Courses </h1>
+
+<div class="table-responsive">
+    <table class = "table table-striped">
+        <thead>
+        <tr>
+            <th>Sr. #</th>
+            <th>Course Name</th>
+            <th>Short Name</th>
+            <th>Course Code</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+            {%for i in courses%}
+            <tr>
+                <td>{{courses.index(i) + 1}}</td>
+                <td>{{i['course_name'].title()}}</td>
+                <td>{{i['course_short']}}</td>
+                <td>{{i['course_code']}}</td>
+                <td><button class="btn btn-primary" data-toggle="modal" data-target="#mark_modal" id="{{courses.index(i)}}" onclick = "cc_save_s({{courses.index(i)}})">Mark Attendence</button></td>
+                <script type="text/javascript" language="JavaScript">
+                                course_code_arr_id.push("{{i['course_short']}}");
+
+                                function cc_save_s(inp){
+                                    course_code_x = inp;
+                                    document.getElementById("inner_mark").innerHTML = "Mark Attendence of " + course_code_arr_id[course_code_x];
+                                    document.getElementById("atts").value = course_code_arr_id[course_code_x] ;
+                                    document.getElementById("atts").setAttribute("enabled","true");
+                                }
+
+                </script>
+            </tr>
+            {%endfor%}
+        </tbody>
+    </table>
+</div>
+
+
+
+
+
+
+<div class="modal fade" id="mark_modal" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <legend id="inner_mark">Mark Attendence </legend>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+
+            <div class="modal-body">
+
+                <form action="/mark_attendence" method="POST" id="mark_form">
+                    <div class="form-group">
+                        <select form="mark_form" autofocus="on" class="form-control" name="course_c" id="atts" required>
+                            <!--
+                            <option selected value="{{courses[0]['course_short']}}">cource_c</option>
+                            -->
+                            {%for i in courses%}
+                            <option value = "{{i['course_short']}}"> {{i["course_short"]}} </option>
+                            {%endfor%}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <input class="form-control" type="number" required min="1" max="8" pattern="[0-9]" autocomplete="off" name="hours" placeholder="Class hours" size = "50" />
+                    </div>
+                    <div class="form-group">
+                        <input class="form-control" type="date" autocomplete="off" name="date_class" value="Date()"  required />
+                    </div>
+                </form>
+
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" type="submit" form="mark_form">Generate QR</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}

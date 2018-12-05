@@ -1,0 +1,49 @@
+
+{% extends "layout.html" %}
+
+{% block title %}
+    Teacher
+{% endblock %}
+
+{% block main %}
+
+<script>
+    var course_code_arr_id = [];
+    var course_code_x;
+
+</script>
+
+
+<h1  align = "left"> Scan QR Code </h1>
+
+<div class="table-responsive">
+    <div>
+          <div class="value">10</div>
+            <input type="range" min="0" max="10" step="-1" value="10">
+
+            <script>
+    var elem = document.querySelector('input[type="range"]');
+
+    var rangeValue = function(){
+        var newValue = elem.value;
+        var target = document.querySelector('.value');
+        target.innerHTML = newValue;
+        document.getElementById("qr_img").setAttribute("height",document.getElementById("qr_img").height - newValue - 10);
+        document.getElementById("qr_img").setAttribute("width",document.getElementById("qr_img").width - newValue - 10);
+    }
+    elem.addEventListener("input", rangeValue);
+
+</script>
+    </div>
+    <br>
+    <img class ="center "src="{{qr_c}}" alt="QR - CODE" id="qr_img">
+</div>
+
+
+
+
+
+
+
+
+{% endblock %}

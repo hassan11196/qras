@@ -1,0 +1,49 @@
+{%extends "layout.html" %}
+
+{%block title%}
+History
+{%endblock%}
+
+{%block main%}
+<div style="text-align:left;">
+    <h1 id="text_hist" style="display:inline-block;">History of Transactions.  <form action="/history" method="POST" style="display:inline">
+    <button  id="button_hist" class="btn btn-danger " type="submit">Click here to delete history</button>
+</form>
+
+    </h1>
+
+
+</div>
+
+
+<hr>
+
+<table class = "table table-striped">
+    <thead>
+        <tr>
+        <th>Symbol</th>
+        <th>Shares</th>
+        <th>Price per share</th>
+        <th>Total price</th>
+        <th>Transacted</th>
+    </tr>
+    </thead>
+
+    <tbody>
+        {%if stack.reverse()%}
+        {%endif%}
+        {%for i in stack%}
+        <tr>
+            <td>{{i['stock_name']}}</td>
+            <td>{{i['stock_quantity']}}</td>
+            <td>${{i['stock_price']}}</td>
+            <td>${{i['stock_total_price']|round}}</td>
+            <td>{{i['time_purchased']}}</td>
+        </tr>
+        {%endfor%}
+    </tbody>
+</table>
+{%if not stack%}
+<h2 align="left"> No Recent Transactions Found. </h1>
+{%endif%}
+{%endblock%}

@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Register
+{% endblock %}
+
+{% block main %}
+
+
+
+    <div>
+        <form action="register/teacher" method="GET" id="teach">
+            <button class="btn btn-primary" type="submit" form="teach" >Teacher - Register</button>
+        </form>
+    </div>
+    <div><br></div>
+    <div>
+        <form action="register/student" method="GET" id="stud">
+            <button class="btn btn-primary" type="submit" form="stud">Student - Register</button>
+        </form>
+    </div>
+
+
+{% endblock %}
