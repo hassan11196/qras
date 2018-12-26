@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block main %}
-
+{% if ac%}
 <h1  align = "left"> Registered Courses </h1>
 
 <div class="table-responsive">
@@ -16,22 +16,57 @@
             <th>Course Name</th>
             <th>Short Name</th>
             <th>Course Code</th>
+            <th>Section</th>
             <th>Teacher</th>
-            <th></th>
+            <th>Attendence</th>
         </tr>
         </thead>
 
         <tbody>
-            {%for i in courses%}
+            {%for i in ac%}
             <tr>
-                <td>{{courses.index(i) + 1}}</td>
+                <td>{{ac.index(i) + 1}}</td>
                 <td>{{i['course_name'].title()}}</td>
                 <td>{{i['course_short']}}</td>
                 <td>{{i['course_code']}}</td>
-
+                <td>{{i['section']}}</td>
+                <td>{{i['teacher_name']}}</td>
+                <td><button class="btn btn-primary">View</button></td>
             </tr>
             {%endfor%}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+<br>
+{% if pc%}
+<h1  align = "left">Courses Pending Approval</h1>
 
+<div class="table-responsive">
+    <table class = "table table-striped">
+        <thead>
+            <tr>
+            <th>Sr. #</th>
+            <th>Course Name</th>
+            <th>Short Name</th>
+            <th>Course Code</th>
+            <th>Section</th>
+        </tr>
+        </thead>
 
+        <tbody>
+            {%for i in pc%}
+            <tr>
+                <td>{{pc.index(i) + 1}}</td>
+                <td>{{i['course_name'].title()}}</td>
+                <td>{{i['course_short']}}</td>
+                <td>{{i['course_code']}}</td>
+                <td>{{i['section']}}</td>
+            </tr>
+            {%endfor%}
+        </tbody>
+    </table>
+</div>
+{% endif %}
 
 {% endblock %}

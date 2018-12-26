@@ -1,5 +1,5 @@
 
-{% extends "layout.html" %}
+{% extends "layout_teacher.html" %}
 
 {% block title %}
     Teacher
@@ -9,6 +9,7 @@
 
 <script>
     var course_code_arr_id = [];
+    var course_sec_arr_id = []
     var course_code_x;
 
 </script>
@@ -24,31 +25,41 @@
             <th>Course Name</th>
             <th>Short Name</th>
             <th>Course Code</th>
+            <th>Section</th>
             <th></th>
         </tr>
         </thead>
+
         <tbody>
-            {%for i in courses%}
+            {%for i in cc%}
             <tr>
-                <td>{{courses.index(i) + 1}}</td>
+                <td>{{cc.index(i) + 1}}</td>
                 <td>{{i['course_name'].title()}}</td>
                 <td>{{i['course_short']}}</td>
                 <td>{{i['course_code']}}</td>
-                <td><button class="btn btn-primary" data-toggle="modal" data-target="#mark_modal" id="{{courses.index(i)}}" onclick = "cc_save_s({{courses.index(i)}})">Mark Attendence</button></td>
+                <td>{{i['course_sec']}}</td>
+                <td><button class="btn btn-primary" data-toggle="modal" data-target="#mark_modal" id="{{cc.index(i)}}" onclick = "cc_save_s({{cc.index(i)}})">Mark Attendence</button></td>
                 <script type="text/javascript" language="JavaScript">
-                                course_code_arr_id.push("{{i['course_short']}}");
+                                course_code_arr_id.push("{{i['course_code']}}");
+                                course_sec_arr_id.push("{{i['course_sec']}}")
 
                                 function cc_save_s(inp){
                                     course_code_x = inp;
                                     document.getElementById("inner_mark").innerHTML = "Mark Attendence of " + course_code_arr_id[course_code_x];
                                     document.getElementById("atts").value = course_code_arr_id[course_code_x] ;
-                                    document.getElementById("atts").setAttribute("enabled","true");
+                                    document.getElementById("atts").setAttribute("readonly","true");
+                                    document.getElementById("course_sec").value=course_sec_arr_id[course_code_x];
+                                    document.getElementById("course_sec").setAttribute("readonly","true");
+                                    document.getElementById("date_box").valueAsDate =  new Date();
+
                                 }
 
                 </script>
+
             </tr>
             {%endfor%}
         </tbody>
+
     </table>
 </div>
 
@@ -68,22 +79,27 @@
             <div class="modal-body">
 
                 <form action="/mark_attendence" method="POST" id="mark_form">
-                    <div class="form-group">
-                        <select form="mark_form" autofocus="on" class="form-control" name="course_c" id="atts" required>
-                            <!--
-                            <option selected value="{{courses[0]['course_short']}}">cource_c</option>
-                            -->
-                            {%for i in courses%}
-                            <option value = "{{i['course_short']}}"> {{i["course_short"]}} </option>
+                    <div class="form-group" >
+                        <label for="atts" >Course Code:</label>
+                        <select form="mark_form" autofocus="on" class="form-control"  name="course_c" id="atts" required>
+
+                            {%for i in cc%}
+                            <option value = "{{i['course_code']}}"> {{i["course_code"]}} </option>
                             {%endfor%}
                         </select>
                     </div>
-
-                    <div class="form-group">
-                        <input class="form-control" type="number" required min="1" max="8" pattern="[0-9]" autocomplete="off" name="hours" placeholder="Class hours" size = "50" />
+                    <div class="form-group" >
+                        <label for="course_sec">Section</label>
+                        <input class="form-control" type="text" required min="1"  id="course_sec" name="course_sec" placeholder="Section"/>
                     </div>
-                    <div class="form-group">
-                        <input class="form-control" type="date" autocomplete="off" name="date_class" value="Date()"  required />
+
+                    <div class="form-group"  >
+                        <label for="ch">Duration(Hours)</label>
+                        <input class="form-control"  id="ch" type="number" value="1" style="width:100px" required min="1" max="8" pattern="[0-9]" autocomplete="off" name="hours" placeholder="Class hours" size = "50" />
+                    </div>
+                    <div class="form-group" >
+                        <label for="date_box">Date:</label>
+                        <input class="form-control" type="date" autocomplete="off" style="text-align:left" name="date_class" id="date_box"  required />
                     </div>
                 </form>
 

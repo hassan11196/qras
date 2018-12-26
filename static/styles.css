@@ -50,6 +50,13 @@ table {
     text-align: left;
 }
 
+.center_qr {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 50%;
+}
+
 
 @import url(https://fonts.googleapis.com/css?family=Dosis:700);
 
@@ -98,3 +105,4 @@ input[type="range"]::-webkit-slider-thumb {
 #button_hist{
 
 }
+

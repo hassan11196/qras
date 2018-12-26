@@ -5,6 +5,9 @@
 {% endblock %}
 
 {% block main %}
+    <h1>
+        Registration For {{semester.title()}}
+    </h1>
     <form action="/register/student" method="POST" id ="comp">
         <div class="form-group">
             <input class="form-control" autocomplete="off" autofocus  maxlength="50" required name="student_name" placeholder="Enter Your Name : " type="text"/>
@@ -43,7 +46,7 @@
                                 <td>{{i['course_short']}}</td>
                                 <td >{{i['course_code']}}</td>
                                 <td>
-                                <input form="comp" class="form-control" autocomplete="off" name="{{i['course_code']}}" pattern="([A-Z]{1}|[A-Z1-9]{2}|GR[0-9]{1})" size="10" maxlength="5" id="{{i['course_code']}}" placeholder="A or A1 or GR1"/>
+                                <input form="comp" class="form-control" autocomplete="off" name="{{i['course_code']}}" pattern="([A-J]{1}|[A-J1-9]{2}|GR[0-9]{1}|[a-j]{1}|[a-j1-9]{2}|gr[0-9]{1})" size="10" maxlength="5" id="{{i['course_code']}}" placeholder="A or A1 or GR1"/>
                                 </td>
                             </tr>
                             {%endfor%}

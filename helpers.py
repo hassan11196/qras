@@ -42,7 +42,7 @@ def student_login_required(f):
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not (session.get("student_id") or session.get("teacher_id")):
+        if not session.get("student_id"):
             return redirect("/login")
         return f(*args, **kwargs)
     return decorated_function
@@ -56,7 +56,7 @@ def teacher_login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if session.get("teacher_id") is None:
-            return redirect("/teacher_login")
+            return redirect("/login")
         return f(*args, **kwargs)
     return decorated_function
 
