@@ -86,11 +86,13 @@ def ret_courses(rows):
     cour = rows[0]['courses_reg'].split("|")
     #print(cour)
     course_list = []
+    semester_list = []
     course_code_dict = {}
     for each_course in cour:
         temp = each_course.split("-")
         course_code_dict[temp[0]] = temp[1]
         course_list.append(temp[0])
+        semester_list.append(temp[2])
 
 
     delimit="\",\""
@@ -111,7 +113,10 @@ def ret_courses(rows):
     for x in course_code_list:
         temp_course_list=next(i for i in all_cour if i["course_code"]==x)
         #print(temp_course_list)
-        course_dict_list2.append({"id":temp_course_list["id"],"course_name":temp_course_list["course_name"],"course_short":temp_course_list["course_short"],"course_code":temp_course_list["course_code"],"course_sec":c_sec_list[cnt]})
+        course_dict_list2.append({"id":temp_course_list["id"],"course_name":temp_course_list["course_name"],
+        "course_short":temp_course_list["course_short"],"course_code":temp_course_list["course_code"],
+        "course_sec":c_sec_list[cnt],"semester":semester_list[cnt],
+        "course_unique":str(str(temp_course_list["course_code"]) + "-" + str(c_sec_list[cnt]) + "-" + str(semester_list[cnt]))})
         cnt=cnt+1
 
     #print(course_dict_list2)
@@ -371,9 +376,12 @@ def s_qr():
         date_time = str(datetime.now(pytz.timezone("Asia/Karachi")).date())
         course_uni = str(x['course_code']) + "-" + str(x['section']).upper() + "-" + str(x['semester'])
 
-        db.execute("INSERT INTO attendence (id,roll_number,student_name,student_class,class_date_t,section,class_teacher,state,attendence_time,semester,course_unique,teacher_mail)\
-        VALUES(:id_t,:roll_t,:sname_t,:scode_t,:c_datet_t,:csec_t,:tname,:type_t,:att_t,:csem_t,:cuni_t,:tmail_t)",
-        id_t = curr_time + "-" + str(roll_num),roll_t = roll_num, sname_t = student[0]['student_name'],scode_t = x['course_code'], c_datet_t = date_time, csec_t = x['section'], tname = x['teacher_name'], att_t = curr_time,type_t = "P", csem_t = x['semester'],cuni_t = course_uni, tmail_t=x['teacher_mail'])
+        update_stud = db.execute("UPDATE attendence SET attendence_time=:currtime_t,state=:type_t WHERE course_unique=:cuni_t AND roll_number=:roll_t AND class_date_t=:date_t AND state=:state_t",
+        currtime_t = curr_time,type_t = "P", cuni_t = course_uni, roll_t = session['student_roll_num'], date_t = date_time, state_t="A")
+
+        if not update_stud:
+            print("Attendence NOT UPDATED")
+            return jsonify("NO Attendence",400)
 
         #print("cour_student = " + str(cour_student))
 
@@ -511,6 +519,19 @@ def teacher_approve():
         course_to_approve = ret_p_courses(courses_complete)
         return render_template("teacher/approve.html", refresh=redirect,cc=courses_complete,ac = course_to_approve)
 
+@app.route("/teacher/view",methods=["GET"])
+@teacher_login_required
+def teacher_view():
+    if request.method == "GET":
+        courses_complete = session['courses_teacher']
+        attendence_courses = []
+        for x in courses_complete:
+            temp = db.execute("SELECT * FROM attendence WHERE teacher_mail=:tmail_t AND course_unique=:cunit_t",tmail_t = session['teacher_mail'], cunit_t = str(x['course_code'] + "-" + x['course_sec'] + "-" + x['semester']))
+            attendence_courses.append(temp)
+        print(attendence_courses)
+
+        return render_template("teacher/view.html",cc = courses_complete, ac = attendence_courses)
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     """Log user in"""
@@ -606,6 +627,7 @@ def login_teacher():
 
         stud = db.execute("SELECT * FROM teachers WHERE id=:id_", id_=session['teacher_id'])
 
+        """
         #print(stud[0])
         cour = stud[0]['courses_reg'].split("|")
         #print(cour)
@@ -643,7 +665,9 @@ def login_teacher():
             course_dict_list2.append({"id":temp_course_list["id"],"course_name":temp_course_list["course_name"],"course_short":temp_course_list["course_short"],"course_code":temp_course_list["course_code"],"course_sec":c_sec_list[cnt]})
             cnt=cnt+1
         print(course_dict_list2)
-
+        """
+        course_dict_list2 = []
+        course_dict_list2 = ret_courses(rows)
         session["teacher_name"] = (rows[0]["teacher_name"]).lower()
         session["courses_teacher"] = course_dict_list2
 
@@ -679,6 +703,8 @@ def mart_att():
             return apology("must provide course section.",400)
 
 
+        course_semester = current_semester # To be removed
+
         course_short=request.form.get("course_c")
         course_sec = request.form.get("course_sec")
         hours=request.form.get("hours")
@@ -688,12 +714,28 @@ def mart_att():
 
         temp_str = "Attendence For " + str(course_short) + ", section "+ str(course_sec) +  ", Duration : "  +str(hours) + " hour(s)" +" On " + date
 
-        at_str = str(course_short )+"|" + str(course_sec) + "|" + str(current_semester)  + "|"+ str(hours) + "|" + date + "|" + str(session['teacher_id']) + "|" + str(datetime.now(pytz.timezone("Asia/Karachi")).time())
+        at_str = str(course_short )+"|" + str(course_sec) + "|" + str(course_semester)  + "|"+ str(hours) + "|" + date + "|" + str(session['teacher_id']) + "|" + str(datetime.now(pytz.timezone("Asia/Karachi")).time())
         qr_url = pyqrcode.create(at_str)
         file_ad = "static/" + str(course_short) +".png"
         file_name = str(course_short) +".png"
         qr_url.png(file_ad,scale=20)
         pic = url_for('static',filename=file_name)
+
+        course_code =  str(course_short)
+
+        course_uni = str(course_code) + "-" + str(course_sec) + "-" + str(course_semester)
+        curr_date = str(datetime.now(pytz.timezone("Asia/Karachi")).date())
+        curr_time = str(datetime.now(pytz.timezone("Asia/Karachi")).time())
+
+        students = db.execute("SELECT * FROM a_stud where course_unique=:cuni_t AND teacher_mail=:tmail_t",cuni_t = course_uni,tmail_t = session['teacher_mail'])
+        for x in students:
+            db.execute("INSERT INTO attendence (id,roll_number,student_name,student_class,class_date_t,section,class_teacher,state,attendence_time,semester,course_unique,teacher_mail,duration)\
+            VALUES(:id_t,:roll_t,:sname_t,:scode_t,:c_datet_t,:csec_t,:tname,:type_t,:att_t,:csem_t,:cuni_t,:tmail_t,:cdur_t)",
+            id_t = str(curr_time) + "|" + str(x['roll_num']),roll_t = x['roll_num'], sname_t = x['student_name'],scode_t = x['course_code'], c_datet_t = str(curr_date), csec_t = x['section'],
+            tname = x['teacher_name'], att_t = curr_time,type_t = "A", csem_t = x['semester'],cuni_t = course_uni, tmail_t=x['teacher_mail'], cdur_t = int(hours))
+
+
+
         flash(temp_str)
         return render_template("mark_attendence.html",qr_c=pic)
 
@@ -889,6 +931,9 @@ def register():
 
 def errorhandler(e):
     """Handle error"""
+    if isinstance(e,ValueError):
+        return apology("ValueError",400)
+
     return apology(e.name, e.code)
 
 

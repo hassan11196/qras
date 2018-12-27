@@ -11,7 +11,8 @@
     var course_code_arr_id = [];
     var course_sec_arr_id = []
     var course_code_x;
-
+    var js_cc = {{cc | tojson}}
+    console.log(js_cc)
 </script>
 
 
@@ -26,6 +27,7 @@
             <th>Short Name</th>
             <th>Course Code</th>
             <th>Section</th>
+            <th>Semester</th>
             <th></th>
         </tr>
         </thead>
@@ -38,6 +40,7 @@
                 <td>{{i['course_short']}}</td>
                 <td>{{i['course_code']}}</td>
                 <td>{{i['course_sec']}}</td>
+                <td>{{i['semester']}}</td>
                 <td><button class="btn btn-primary" data-toggle="modal" data-target="#mark_modal" id="{{cc.index(i)}}" onclick = "cc_save_s({{cc.index(i)}})">Mark Attendence</button></td>
                 <script type="text/javascript" language="JavaScript">
                                 course_code_arr_id.push("{{i['course_code']}}");
@@ -51,6 +54,7 @@
                                     document.getElementById("course_sec").value=course_sec_arr_id[course_code_x];
                                     document.getElementById("course_sec").setAttribute("readonly","true");
                                     document.getElementById("date_box").valueAsDate =  new Date();
+                                    document.getElementById("sem_box").value = js_cc[inp]['semester'];
 
                                 }
 
@@ -89,6 +93,10 @@
                         </select>
                     </div>
                     <div class="form-group" >
+                        <label>Semester:</label>
+                        <input class="form-control" autocomplete="off"  name="course_sem" id="sem_box" readonly required />
+                    </div>
+                    <div class="form-group" >
                         <label for="course_sec">Section</label>
                         <input class="form-control" type="text" required min="1"  id="course_sec" name="course_sec" placeholder="Section"/>
                     </div>
@@ -99,7 +107,7 @@
                     </div>
                     <div class="form-group" >
                         <label for="date_box">Date:</label>
-                        <input class="form-control" type="date" autocomplete="off" style="text-align:left" name="date_class" id="date_box"  required />
+                        <input class="form-control" type="date" autocomplete="off"  name="date_class" id="date_box"  required />
                     </div>
                 </form>
 
