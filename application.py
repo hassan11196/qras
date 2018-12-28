@@ -15,6 +15,14 @@ import calendar
 from helpers import apology, login_required, lookup, usd, student_login_required, teacher_login_required
 
 
+# using SendGrid's Python Library
+# https://github.com/sendgrid/sendgrid-python
+import sendgrid
+from sendgrid.helpers.mail import *
+
+sg = sendgrid.SendGridAPIClient(apikey=os.environ.get('SENDGRID_API_KEY'))
+
+
 # Ensure environment variable is set
 
 # Configure application
@@ -281,6 +289,8 @@ def after_request(response):
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     response.headers["Expires"] = 0
     response.headers["Pragma"] = "no-cache"
+
+
     return response
 
 
@@ -296,6 +306,24 @@ Session(app)
 # Configure CS50 Library to use SQLite database
 db = SQL("sqlite:///finance.db")
 # p_studs is DB of Students Courses not verified by teacher of course
+
+
+
+@app.route("/mail", methods=["GET"])
+def mail():
+    from_email = Email("FASTQRAS@nu.edu.pk")
+    to_email = Email("k173654@nu.edu.pk")
+    subject = "TEST FROM CS50"
+    content = Content("text/plain", "Hello This is COAL QRAS FAST NUCES.")
+
+    mail = Mail(from_email, subject, to_email, content)
+    print(mail)
+    sg.client.mail.send.post(request_body=mail.get())
+    #responses = sg.client.mail.send.post(mail.get())
+#    print(responses.status_code)
+#    print(responses.body)
+#    print(responses.headers)
+    return redirect("/")
 
 
 @app.route("/about", methods=["GET", "POST"])
@@ -728,6 +756,13 @@ def mart_att():
         curr_time = str(datetime.now(pytz.timezone("Asia/Karachi")).time())
 
         students = db.execute("SELECT * FROM a_stud where course_unique=:cuni_t AND teacher_mail=:tmail_t",cuni_t = course_uni,tmail_t = session['teacher_mail'])
+        check_if_already_open = db.execute("SELECT * FROM attendence WHERE course_unique=:cuni_t AND teacher_mail=:tmail_t AND class_date_t=:date_t",
+        cuni_t=course_uni,tmail_t=session['teacher_mail'],date_t = curr_date)
+
+        if check_if_already_open:
+            temp_str = temp_str + " Opened Earlier"
+            flash(temp_str)
+            return render_template("mark_attendence.html",qr_c=pic)
         for x in students:
             db.execute("INSERT INTO attendence (id,roll_number,student_name,student_class,class_date_t,section,class_teacher,state,attendence_time,semester,course_unique,teacher_mail,duration)\
             VALUES(:id_t,:roll_t,:sname_t,:scode_t,:c_datet_t,:csec_t,:tname,:type_t,:att_t,:csem_t,:cuni_t,:tmail_t,:cdur_t)",
