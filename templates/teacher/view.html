@@ -1,4 +1,4 @@
-{% extends "layout_teacher.html" %}
+{% extends "teacher/layout_teacher.html" %}
 
 {% block title %}
     View
@@ -7,53 +7,156 @@
 {% block main %}
 
 <h1  align = "left"> Registered Courses </h1>
-
+{% set count = ['1'] %}
 <div class="accordian" id="accordian_courses">
     {%for x in cc%}
         <div class="card">
             <div class="card-header">
                 <h2 class="mb-0">
-                    <button class="btn btn-outline-info btn-lg btn-block" type="button" data-toggle="collapse" aria-expanded="false" data-target="#{{x['course_unique']}}">
+                    <button class="btn btn-outline-info btn-lg btn-block" style="white-space: normal !important;word-wrap: break-word !important;" type="button" data-toggle="collapse" aria-expanded="false" data-target="#{{x['course_unique']}}">
                         {{x['course_name'].title()}} - {{x['course_sec']}} - {{x['semester']}}
                     </button>
                 </h2>
             </div>
             <div id="{{x['course_unique']}}" class="collapse" data-parent="accordian_courses">
                 <div class="card-body">
-                    <div class="table-responsive" class="card-body">
-                        <table class="table table-striped table-hover">
-                            <thead>
-                                <th>Sr. #</th>
-                                <th>Student Name</th>
-                                <th>Course Code</th>
-                                <th>Section</th>
-                                <th>Semester</th>
-                                <th>Date</th>
-                                <th>Duration</th>
-                                <th>Attendence</th>
-                            </thead>
-                            <tbody>
-                                {%for i in ac[cc.index(x)]%}
-                                    {%if i%}
-                                <tr>
-                                    <td>{{ac[cc.index(x)].index(i) + 1}}</td>
-                                    <td>{{i['student_name']}}</td>
-                                    <td>{{i['student_class']}}</td>
-                                    <td>{{i['section']}}</td>
-                                    <td>{{i['semester']}}</td>
-                                    <td>{{i['class_date_t']}}</td>
-                                    <td>{{i['duration']}}</td>
-                                    <td>{{i['state']}}</td>
-                                </tr>
-                                        {%elif not i%}
-                                <tr><p>No Attendence Taken</p></tr>
+                    <div class="accordian" id="accordian_time{{x['course_unique']}}">
+                        {% set count = ['1'] %}
+                        {%for z in nc[cc.index(x)]%}
 
-                                    {%endif%}
+                            {%if z%}
 
-                                {%endfor%}
-                            </tbody>
-                        </table>
+                                <div class="card-header">
+                                    <h2 class="mb-0">
+                                        <button id = "butt{{x['course_unique']}}{{z}}" class="btn btn-info btn-lg btn-block" style="white-space: normal !important;word-wrap: break-word !important;" type="button" data-toggle="collapse" aria-expanded="false" data-target="#inner_time{{x['course_unique']}}{{z}}" >
+                                            <script>
+                                                var dat = {{kl[cc.index(x)][count|length - 1] | tojson}};
+                                                var days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+                                                var date = new Date(dat);
+                                                var but_name1 = {{x['course_unique']|tojson}};
+                                                var but_name2 = {{z|tojson}};
+                                                var butname = "butt" + but_name1 + but_name2;
+                                                document.getElementById(butname).innerHTML = days[date.getDay()];
+                                                console.log(butname);
+                                                console.log(date);
+                                            </script>
+                                            {{ kl[cc.index(x)][count|length - 1] }}
+                                            {% if count.append('1') %}
+                                            {% endif%}
+
+
+                                        </button>
+                                    </h2>
+                                </div>
+                                <div id="inner_time{{x['course_unique']}}{{z}}" class = "collapse" data-parent="accordian_time{{x['course_unique']}}">
+                                    <div class="card-body">
+                                        <div class="table-responsive" class="card-body">
+                                            <table class="table table-striped table-hover ">
+                                                <thead >
+                                                    <th>Sr. #</th>
+                                                    <th>Student Name</th>
+                                                    <th>Course Code</th>
+                                                    <th>Section</th>
+                                                    <th>Semester</th>
+                                                    <th>Date</th>
+                                                    <th>Duration</th>
+                                                    <th>Attendence</th>
+                                                    <th>Open Time</th>
+                                                    <th>Register Time</th>
+                                                </thead>
+                                                <tbody>
+                                                    {%set inter_count = ['1']%}
+                                                    {% for a in nc[cc.index(x)][z] %}
+
+                                                        {%if a %}
+                                                            <tr>
+                                                                <td>{{inter_count|length}}</td>
+                                                                <td>{{a['student_name'].title()}}</td>
+                                                                <td>{{a['student_class']}}</td>
+                                                                <td>{{a['section']}}</td>
+                                                                <td>{{a['semester']}}</td>
+                                                                <td>{{a['class_date_t']}}</td>
+                                                                <td>{{a['duration']}}  Hour(s)</td>
+                                                                <td style="text-align:center;">{{a['state']}}</td>
+                                                                <td>{{a['id'].split("|")[0].split(".")[0]}}</td>
+                                                                <td>{{a['attendence_time'].split(".")[0]}}</td>
+                                                            </tr>
+                                                        {% endif %}
+                                                        {% if inter_count.append('1') %}
+                                                        {% endif %}
+                                                    {%endfor%}
+
+                                                </tbody>
+                                            </table>
+
+                                        </div>
+                                    </div>
+                                </div>
+
+                            {%endif%}
+
+                        {%endfor%}
+
                     </div>
+
+
+                    <!--{%for z in nc[cc.index(x)]%}-->
+                    <!--                {%if z%}-->
+                    <!--                    {%set cnt = 0%}-->
+                    <!--                    <tr><td colspan="8">{{ kl[cc.index(x)][cnt] }}</td></tr>-->
+                    <!--                    {% for a in nc[cc.index(x)][z] %}-->
+                    <!--                        {%if a%}-->
+                    <!--                            <tr>-->
+                    <!--                                <td>{{cnt}}</td>-->
+                    <!--                                <td>{{a['student_name'].title()}}</td>-->
+                    <!--                                <td>{{a['student_class']}}</td>-->
+                    <!--                                <td>{{a['section']}}</td>-->
+                    <!--                                <td>{{a['semester']}}</td>-->
+                    <!--                                <td>{{a['class_date_t']}}</td>-->
+                    <!--                                <td>{{a['duration']}}</td>-->
+                    <!--                                <td>{{a['state']}}</td>-->
+                    <!--                            </tr>-->
+                    <!--                        {%endif%}-->
+                    <!--                    {%endfor%}-->
+                    <!--                    {%set cnt = cnt+1%}-->
+                    <!--                {%endif%}-->
+                    <!--            {%endfor%}-->
+
+
+                    <!--<div class="table-responsive" class="card-body">-->
+                    <!--    <table class="table table-striped table-hover">-->
+                    <!--        <thead>-->
+                    <!--            <th>Sr. #</th>-->
+                    <!--            <th>Student Name</th>-->
+                    <!--            <th>Course Code</th>-->
+                    <!--            <th>Section</th>-->
+                    <!--            <th>Semester</th>-->
+                    <!--            <th>Date</th>-->
+                    <!--            <th>Duration</th>-->
+                    <!--            <th>Attendence</th>-->
+                    <!--        </thead>-->
+                    <!--        <tbody>-->
+                    <!--            {%for i in ac[cc.index(x)]%}-->
+                    <!--                {%if i%}-->
+                    <!--            <tr>-->
+                    <!--                <td>{{ac[cc.index(x)].index(i) + 1}}</td>-->
+                    <!--                <td>{{i['student_name'].title()}}</td>-->
+                    <!--                <td>{{i['student_class']}}</td>-->
+                    <!--                <td>{{i['section']}}</td>-->
+                    <!--                <td>{{i['semester']}}</td>-->
+                    <!--                <td>{{i['class_date_t']}}</td>-->
+                    <!--                <td>{{i['duration']}}</td>-->
+                    <!--                <td>{{i['state']}}</td>-->
+                    <!--            </tr>-->
+                    <!--                    {%elif not i%}-->
+                    <!--            <tr><p>No Attendence Taken</p></tr>-->
+
+                    <!--                {%endif%}-->
+
+                    <!--            {%endfor%}-->
+                    <!--        </tbody>-->
+                    <!--    </table>-->
+                    <!--</div>-->
 
                 </div>
             </div>

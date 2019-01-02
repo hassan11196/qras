@@ -1,5 +1,5 @@
 
-{% extends "layout_teacher.html" %}
+{% extends "teacher/layout_teacher.html" %}
 
 {% block title %}
     Teacher
@@ -58,6 +58,8 @@
 
                                 }
 
+
+
                 </script>
 
             </tr>
@@ -88,7 +90,7 @@
                         <select form="mark_form" autofocus="on" class="form-control"  name="course_c" id="atts" required>
 
                             {%for i in cc%}
-                            <option value = "{{i['course_code']}}"> {{i["course_code"]}} </option>
+                            <option value = "{{i['course_code']}}" > {{i["course_code"]}} </option>
                             {%endfor%}
                         </select>
                     </div>
@@ -109,11 +111,20 @@
                         <label for="date_box">Date:</label>
                         <input class="form-control" type="date" autocomplete="off"  name="date_class" id="date_box"  required />
                     </div>
+                    <div class="form-group">
+                        <label for="date_box">Time Limit(minutes):</label>
+                        <input class="form-control" id="time_l" type="number" value="5" style="width:100px" required min="5" max="30" pattern="[0-30]" autocomplete="off" name="time_limit" placeholder="time limit" size = "50"  required />
+
+
+                    </div>
+
+
                 </form>
 
             </div>
             <div class="modal-footer">
-                <button class="btn btn-primary" type="submit" form="mark_form">Generate QR</button>
+                <button class="btn btn-primary" type="submit" form="mark_form" >Generate QR</button>
+
             </div>
         </div>
     </div>

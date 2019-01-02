@@ -14,31 +14,8 @@
     var dash_quote_x;
 </script>
 <h1  align = "left"> Registered Courses </h1>
-
-<div class="table-responsive">
-    <table class = "table table-striped">
-        <thead>
-            <tr>
-            <th>Sr. #</th>
-            <th>Course Name</th>
-            <th>Short Name</th>
-            <th>Course Code</th>
-            <th>Teacher</th>
-            <th></th>
-        </tr>
-        </thead>
-
-        <tbody>
-            {%for i in courses%}
-            <tr>
-                <td>{{courses.index(i)}}</td>
-                <td>{{i['course_name']}}</td>
-                <td>{{i['course_short']}}</td>
-                <td>{{i['course_code']}}</td>
-
-            </tr>
-            {%endfor%}
-
-
+<h2>
+    DEPRECEATED - LEGACY CODE
+</h2>
 
 {% endblock %}

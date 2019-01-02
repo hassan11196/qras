@@ -29,14 +29,19 @@
             <div class="collapse navbar-collapse" id="navbar">
                 {% if session.user_id %}
                     <ul class="navbar-nav mr-auto mt-2">
-                        <li class="nav-item"><a class="nav-link" href="/quote">Profile</a></li>
-                        <li class="nav-item"><a class="nav-link" href="/teacher/view">Attendence</a></li>
-                        <li class="nav-item"><a class="nav-link" href="/sell">Courses</a></li>
-                        <li class="nav-item"><a class="nav-link" href="/teacher/approve">Approve Students</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/student/view">Attendence</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/student/add">Add Course</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/active_courses">Courses</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/active_students">Registered Students</a></li>
                         <li class="nav-item"><a class="nav-link" href="/about">About</a></li>
                     </ul>
 
                     <ul class="navbar-nav ml-auto mt-2">
+                        {% if session.student_roll_num%}
+                            <li class="nav-item">
+                                <a class="navbar-brand" style="text-align:center;"> <span class="badge badge-success">Student {{session.student_roll_num.capitalize()}}</span> </a>
+                            </li>
+                        {% endif %}
                         <li class="nav-item"><a class="nav-link" href="/logout">Log Out</a></li>
                     </ul>
                 {% else %}
@@ -55,7 +60,6 @@
                 </div>
             </header>
         {% endif %}
-
         <main class="container p-5">
             {% block main %}{% endblock %}
         </main>

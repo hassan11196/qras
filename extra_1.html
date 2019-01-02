@@ -1,0 +1,74 @@
+{% extends "layout_teacher.html" %}
+
+{% block title %}
+    View
+{% endblock %}
+
+{% block main %}
+
+<h1  align = "left"> Registered Courses </h1>
+
+<div class="accordian" id="accordian_courses">
+    {%for x in cc%}
+        <div class="card">
+            <div class="card-header">
+                <h2 class="mb-0">
+                    <button class="btn btn-outline-info btn-lg btn-block" style="white-space: normal !important;word-wrap: break-word !important;" type="button" data-toggle="collapse" aria-expanded="false" data-target="#{{x['course_unique']}}">
+                        {{x['course_name'].title()}} - {{x['course_sec']}} - {{x['semester']}}
+                    </button>
+                </h2>
+            </div>
+            <div id="{{x['course_unique']}}" class="collapse" data-parent="accordian_courses">
+                <div class="card-body">
+                    <div class="table-responsive" class="card-body">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <th>Sr. #</th>
+                                <th>Student Name</th>
+                                <th>Course Code</th>
+                                <th>Section</th>
+                                <th>Semester</th>
+                                <th>Date</th>
+                                <th>Duration</th>
+                                <th>Attendence</th>
+                            </thead>
+                            <tbody>
+                                {%for z in nc[cc.index(x)]%}
+                                    {%if z%}
+                                        {%set cnt = 0%}
+                                        <tr><td colspan="8">{{ kl[cc.index(x)][cnt] }}</td></tr>
+                                        {% for a in nc[cc.index(x)][z] %}
+                                            {%if a%}
+                                                <tr>
+                                                    <td>{{cnt}}</td>
+                                                    <td>{{a['student_name'].title()}}</td>
+                                                    <td>{{a['student_class']}}</td>
+                                                    <td>{{a['section']}}</td>
+                                                    <td>{{a['semester']}}</td>
+                                                    <td>{{a['class_date_t']}}</td>
+                                                    <td>{{a['duration']}}</td>
+                                                    <td>{{a['state']}}</td>
+                                                </tr>
+                                            {%endif%}
+                                        {%endfor%}
+                                        {%set cnt = cnt+1%}
+                                    {%endif%}
+                                {%endfor%}
+
+
+
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    {%endfor%}
+</div>
+
+
+
+
+{% endblock %}

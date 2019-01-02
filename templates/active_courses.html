@@ -1,0 +1,50 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Active Courses
+{% endblock %}
+
+{% block main %}
+
+<h1  align = "left"> Active Courses in Portal For FALL2018</h1>
+<br>
+<div class="table-responsive" class="card-body">
+    <table class="table table-striped table-hover">
+        {% if ac[0] %}
+        <thead>
+            <th>Sr. #</th>
+            <th>Course Code</th>
+            <th>Section</th>
+            <th>Semester</th>
+            <th>Teacher</th>
+            <th>Teacher Mail</th>
+
+        </thead>
+        {% else %}
+            <tr><td colspan = "6"><h2>No Course</h2></td></tr>
+        {% endif %}
+        <tbody>
+            {%for i in ac%}
+                {%if i%}
+                    <tr>
+                        <td>{{ac.index(i) + 1}}</td>
+                        <td>{{i['course_code']}}</td>
+                        <td>{{i['section']}}</td>
+                        <td>{{i['semester']}}</td>
+                        <td>{{i['teacher'].title()}}</td>
+                        <td>{{i['teacher_mail'].capitalize()}}</td>
+                    </tr>
+                {% elif not i %}
+                    <tr><td colspan = "6"><h2>No Course</h2></td></tr>
+
+                {%endif%}
+
+            {%endfor%}
+        </tbody>
+    </table>
+</div>
+
+
+
+
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Active students
+{% endblock %}
+
+{% block main %}
+
+<h1  align = "left"> Active Students on Portal For FALL2018</h1>
+<br>
+<div class="table-responsive" class="card-body">
+    <table class="table table-striped table-hover">
+        {% if ac[0] %}
+        <thead>
+            <th>Sr. #</th>
+            <th>Student Name</th>
+            <th>Course Code</th>
+            <th>Semester</th>
+            <th>Batch</th>
+            <th>No. Courses</th>
+            <th>Courses</th>
+
+
+        </thead>
+        {% else %}
+            <tr><td colspan = "6"><h2>No Students</h2></td></tr>
+        {% endif %}
+        <tbody>
+            {%for i in ac%}
+                {%if i%}
+                    <tr>
+                        <td>{{ac.index(i) + 1}}</td>
+                        <td>{{i['student_name'].title()}}</td>
+                        <td>{{i['roll_num']}}</td>
+                        <td>{{i['courses_reg'].split("|")[0].split("-")[2]}}</td>
+                        <td>{{i['year']}}</td>
+                        <th>{{i['num_courses']}}</th>
+                        <th>
+                            <div class="dropdown">
+                                <button class="btn btn-primary dropdown-toggle" type="button" id="cour{{i['roll_num']}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    See Courses
+                                </button>
+                                <div class="dropdown-menu" aria-labelledby="cour{{i['roll_num']}}">
+                                    {% for x in range(0,i['num_courses']) %}
+                                        <a class="dropdown-item" href="#"> {{i['courses_reg'].split("|")[x]}} </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </th>
+
+
+                    </tr>
+                {% elif not i %}
+                    <tr><td colspan = "6"><h2>No Students</h2></td></tr>
+
+                {%endif%}
+
+            {%endfor%}
+        </tbody>
+    </table>
+</div>
+
+
+
+
+
+{% endblock %}

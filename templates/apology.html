@@ -5,9 +5,24 @@
 {% endblock %}
 
 {% block main %}
+
+
+    <!--<img alt="{{ top }}" class="border" src="http://memegen.link/custom/{{ top | urlencode }}/{{ bottom | urlencode }}.jpg?alt=https://i.imgur.com/CsCgN7Ll.png"/>-->
+    <div class="alert alert-danger" role="alert">
+        <h1>
+            ERROR {{top}}
+        </h1>
+        <h2 class="mb-0">
+
+          <div>
+              {{bottom}}
+          </div>
+        </h2>
+
+
+    </div>
+    <hr>
     <form>
           <button class="btn btn-group" type="return"> Return </button>
     </form>
-    <hr>
-    <img alt="{{ top }}" class="border" src="http://memegen.link/custom/{{ top | urlencode }}/{{ bottom | urlencode }}.jpg?alt=https://i.imgur.com/CsCgN7Ll.png"/>
 {% endblock %}

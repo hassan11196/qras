@@ -1,7 +1,7 @@
 import os
 
 from cs50 import SQL
-from flask import Flask, flash, redirect, render_template, request, session, get_flashed_messages, jsonify, url_for
+from flask import Flask, flash, redirect, render_template, request, session, get_flashed_messages, jsonify, url_for, send_file
 from flask_session import Session
 from tempfile import mkdtemp
 from werkzeug.exceptions import default_exceptions
@@ -87,7 +87,7 @@ def ret_index(comb,index=0): # comb is list or string of courses
     return
 
 # Returns list of courses with dictionatry of info such as section,course short etc
-# Takes Input of list returned by db.execute
+# Takes Input of list returned by db.execute when SELECT from students or teachers
 def ret_courses(rows):
     #print(rows)
     #print(rows[0])
@@ -185,6 +185,48 @@ def ret_courses_take_code(list_courses):
 
     #print(course_dict_list2)
     return course_dict_list2
+
+
+
+
+# Returns Course name with section in str
+"""
+
+"""
+# Takes input only course Codes
+def ret_course_name_take_code(list_courses):
+
+    course_list_codes = []
+    for each_course in list_courses:
+        course_list_codes.append(str(each_course['course_code']))
+
+
+    delimit="\",\""
+    course_str=delimit.join(course_list_codes)
+    course_str=str("\"" + course_str + "\"")
+
+    all_cour=[]
+    all_cour = db.execute("SELECT * FROM courses WHERE course_code IN(" + course_str + ")")
+
+    cnt=0
+    course_dict_list2 = []
+    course_name_w_sec = " "
+    for x in course_list_codes:
+        temp_course_list=next(i for i in all_cour if i["course_code"]==x)
+        #print(temp_course_list)
+        course_name_w_sec += (str(temp_course_list["course_short"].upper() + "-" + str(list_courses[cnt]['section']) + "|"))
+        cnt=cnt+1
+
+
+    #print(course_dict_list2)
+    return course_name_w_sec
+
+
+
+
+
+
+
 
 # Takes input only course Codes RETURNS Registered Courses List
 def ret_courses_reg(list_courses):
@@ -331,6 +373,19 @@ def mail():
 def about():
     return render_template("about.html")
 
+@app.route("/active_courses" ,methods=["GET"])
+def active_cour():
+    if request.method == "GET":
+        active_courses = db.execute("SELECT * FROM active_courses")
+        return render_template("active_courses.html",ac = active_courses)
+
+@app.route("/active_students" ,methods=["GET"])
+def active_stud():
+    if request.method == "GET":
+        active_students = db.execute("SELECT * FROM students")
+        return render_template("active_students.html",ac = active_students)
+
+
 
 @app.route("/")
 @login_required
@@ -418,11 +473,58 @@ def s_qr():
         return jsonify("Attendence Marked.",200)
 
 
-@app.route("/stud_attendence",methods=["GET"])
-@student_login_required
-def stud_ate_view():
 
-    return render_template("stud_attendence.html")
+
+@app.route("/login_mobile/student_attendence", methods=["POST"])
+def mobile_student_attendence():
+    if request.method == "POST":
+        if request.form.get("rollnumber"):
+            print(request.form.get("rollnumber"))
+        # Ensure username was submitted
+        if not request.form.get("rollnumber"):
+            return apology("must provide roll number", 400)
+
+        # Ensure password was submitted
+        elif not request.form.get("password"):
+            return apology("must provide password", 400)
+
+        print(request.form.get("password"))
+
+        # Query database for username
+        rows = db.execute("SELECT * FROM students WHERE roll_num = :username",
+                          username=(request.form.get("rollnumber")).lower())
+
+        if(not rows):
+            print("Invalid Roll Number")
+            return jsonify("Invalid Roll Number");
+        print(rows[0])
+        if(len(rows)!=1):
+            print("Invalid Roll Number")
+            return jsonify("Roll Number Not Registered.")
+
+        # Ensure username exists and password is correct
+        if len(rows) != 1 or not check_password_hash(rows[0]["password"], request.form.get("password")):
+            print("Invalid password")
+            return jsonify("invalid password")
+
+        roll_num = request.form.get("rollnumber")
+        course_dict_list2 = ret_courses(rows)
+        print("LOGIN BY : " + str(course_dict_list2))
+        # Remember which user has logged in
+        session["user_id"] = rows[0]["id"]
+        session["student_id"] = rows[0]["id"]
+        session["student_roll_num"] = roll_num
+        session["courses_student"] = course_dict_list2
+        active_course_codes = db.execute("SELECT * FROM a_stud WHERE roll_num=:roll_t", roll_t=session['student_roll_num'])
+        active_courses = ret_courses_reg(active_course_codes)
+        pending_course_codes = db.execute("SELECT * FROM p_stud WHERE roll_num=:roll_t", roll_t=session['student_roll_num'])
+        pending_courses = ret_courses_take_code(pending_course_codes)
+        session["courses_student_pending"] = pending_courses
+        session["courses_student_registered"] = active_courses
+
+        return redirect("/student/view")
+
+
 
 @app.route("/login_mobile/student_post", methods=["POST"])
 def login_mobile_student_post():
@@ -478,7 +580,17 @@ def login_mobile_student_post():
         temp_str = ("Welcome back " + str(rows[0]["student_name"]).title() + ".")
         #flash(temp_str)
         # Redirect user to home page
-        return jsonify(rows[0]);
+        course_name_w_section_active = ret_course_name_take_code(active_course_codes)
+        course_name_w_section_pending = ret_course_name_take_code(pending_course_codes)
+
+        print(course_name_w_section_active)
+        print(course_name_w_section_pending)
+
+        return jsonify(str(rows[0]['student_name'])+ ","+ str(len(active_course_codes)) +","+ str(course_name_w_section_active)
+        + ","+ str(len(pending_course_codes)) +","+ str(course_name_w_section_pending));
+
+
+
     return redirect("/student_home")
 
 
@@ -486,11 +598,18 @@ def login_mobile_student_post():
 @app.route("/student_home",methods=["GET"])
 @student_login_required
 def stud_home():
-    courses_complete = session["courses_student"]
+    active_course_codes = db.execute("SELECT * FROM a_stud WHERE roll_num=:roll_t", roll_t=session['student_roll_num'])
+    active_courses = ret_courses_reg(active_course_codes)
+    pending_course_codes = db.execute("SELECT * FROM p_stud WHERE roll_num=:roll_t", roll_t=session['student_roll_num'])
+    pending_courses = ret_courses_take_code(pending_course_codes)
 
+    session["courses_student_pending"] = pending_courses
+    session["courses_student_registered"] = active_courses
+
+    courses_complete = session["courses_student"]
     pending_courses = session["courses_student_pending"]
     active_courses = session["courses_student_registered"]
-    return render_template("student_index.html", refresh=redirect,cc = courses_complete, ac=active_courses, pc=pending_courses, cinfo=session["courses_student"])
+    return render_template("student/index.html", refresh=redirect,cc = courses_complete, ac=active_courses, pc=pending_courses, cinfo=session["courses_student"])
 
 @app.route("/teacher_home",methods=["GET","POST"])
 @teacher_login_required
@@ -506,7 +625,7 @@ def teacher_home():
     """
     if request.method == "GET":
         courses_complete = session["courses_teacher"]
-        return render_template("teacher_index.html", refresh=redirect,cc=courses_complete)
+        return render_template("teacher/index.html", refresh=redirect,cc=courses_complete)
 
 @app.route("/teacher/approve",methods=["GET","POST"])
 @teacher_login_required
@@ -553,12 +672,89 @@ def teacher_view():
     if request.method == "GET":
         courses_complete = session['courses_teacher']
         attendence_courses = []
+        sadi_attendence = []
         for x in courses_complete:
             temp = db.execute("SELECT * FROM attendence WHERE teacher_mail=:tmail_t AND course_unique=:cunit_t",tmail_t = session['teacher_mail'], cunit_t = str(x['course_code'] + "-" + x['course_sec'] + "-" + x['semester']))
-            attendence_courses.append(temp)
-        print(attendence_courses)
+            sadi_attendence.append(temp)
+            date_list = {}
+            if temp:
+                i=0
+                while i < len(temp):
+                    flag = 0
+                    t_list = []
+                    date_temp = temp[i]['class_date_t']
+                    while i < len(temp) and date_temp == temp[i]['class_date_t']:
+                        print(temp[i])
+                        t_list.append(temp[i])
+                        i = i+1
+                        flag = 1
+                    date_list[date_temp] = t_list
+                    if flag == 0:
+                        i = i+1
+                print("date list : " + str(date_list))
+            attendence_courses.append(date_list)
+        # print("Course_complete :")
+        # print(courses_complete)
+        # print("NEW ATT : ")
+        # print(attendence_courses)
+        # print("SADI ATT:")
+        # print(sadi_attendence)
+        key_list = []
+        for i in range(0,len(attendence_courses)):
+            key_list.append(list(attendence_courses[i].keys()))
 
-        return render_template("teacher/view.html",cc = courses_complete, ac = attendence_courses)
+        return render_template("teacher/view.html",cc = courses_complete, ac = sadi_attendence,nc = attendence_courses,kl = key_list)
+
+@app.route("/teacher/my_students",methods=["GET"])
+@teacher_login_required
+def teacher_students():
+    if request.method == "GET":
+        my = db.execute("SELECT * FROM a_stud WHERE teacher_mail=:tmail_t AND semester=:tsem_t",
+        tmail_t=session["teacher_mail"],tsem_t=current_semester)
+
+        return render_template("teacher/students.html",ac = my)
+
+@app.route("/student/view",methods=["GET"])
+@student_login_required
+def student_view():
+    if request.method == "GET":
+        courses_complete = session['courses_student']
+        attendence_courses = []
+        sadi_attendence = []
+        for x in courses_complete:
+            temp = db.execute("SELECT * FROM attendence WHERE roll_number=:troll_t AND course_unique=:cunit_t",troll_t = session['student_roll_num'], cunit_t = str(x['course_code'] + "-" + x['course_sec'] + "-" + x['semester']))
+            sadi_attendence.append(temp)
+            date_list = {}
+            if temp:
+                i=0
+                while i < len(temp):
+                    flag = 0
+                    t_list = []
+                    date_temp = temp[i]['class_date_t']
+                    while i < len(temp) and date_temp == temp[i]['class_date_t']:
+                        print(temp[i])
+                        t_list.append(temp[i])
+                        i = i+1
+                        flag = 1
+                    date_list[date_temp] = t_list
+                    if flag == 0:
+                        i = i+1
+                print("date list : " + str(date_list))
+            attendence_courses.append(date_list)
+        # print("Course_complete :")
+        # print(courses_complete)
+        # print("NEW ATT : ")
+        # print(attendence_courses)
+        # print("SADI ATT:")
+        # print(sadi_attendence)
+        key_list = []
+        for i in range(0,len(attendence_courses)):
+            key_list.append(list(attendence_courses[i].keys()))
+
+        return render_template("student/view.html",cc = courses_complete, ac = sadi_attendence,nc = attendence_courses,kl = key_list)
+
+
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -569,11 +765,12 @@ def login():
             return redirect("/student_home")
 
         elif session.get("teacher_id"):
-            return redirect("teacher_home")
+            return redirect("/teacher_home")
 
     # Forget any user_id
     session.clear()
     # User reached route via GET (as by clicking a link or via redirect)
+    flash("Welcome")
     return render_template("login.html")
 
 @app.route("/login/student", methods=["GET","POST"])
@@ -623,7 +820,9 @@ def login_student():
         # Redirect user to home page
         return redirect("/student_home")
     else:
-        return render_template("login_student.html")
+        if session.get("student_id"):
+            return redirect("/student_home")
+        return render_template("student/login_student.html")
 
 @app.route("/login/teacher", methods=["GET","POST"])
 def login_teacher():
@@ -704,7 +903,9 @@ def login_teacher():
         # Redirect user to home page
         return redirect("/teacher_home")
     else:
-        return render_template("login_teacher.html")
+        if session.get("teacher_id"):
+            return redirect("/teacher_home")
+        return render_template("teacher/login_teacher.html")
 
 
 
@@ -737,12 +938,13 @@ def mart_att():
         course_sec = request.form.get("course_sec")
         hours=request.form.get("hours")
         date = request.form.get("date_class")
+        time_limit = request.form.get("time_limit")
         print(course_short)
         print(hours)
 
         temp_str = "Attendence For " + str(course_short) + ", section "+ str(course_sec) +  ", Duration : "  +str(hours) + " hour(s)" +" On " + date
 
-        at_str = str(course_short )+"|" + str(course_sec) + "|" + str(course_semester)  + "|"+ str(hours) + "|" + date + "|" + str(session['teacher_id']) + "|" + str(datetime.now(pytz.timezone("Asia/Karachi")).time())
+        at_str = str(course_short )+"|" + str(course_sec) + "|" + str(course_semester)  + "|"+ str(hours) + "|" + date + "|" + str(session['teacher_id']) + "|" + str(datetime.now(pytz.timezone("Asia/Karachi")).time()) + "|" + time_limit
         qr_url = pyqrcode.create(at_str)
         file_ad = "static/" + str(course_short) +".png"
         file_name = str(course_short) +".png"
@@ -762,17 +964,17 @@ def mart_att():
         if check_if_already_open:
             temp_str = temp_str + " Opened Earlier"
             flash(temp_str)
-            return render_template("mark_attendence.html",qr_c=pic)
+            return render_template("teacher/mark_attendence.html",qr_c=pic)
         for x in students:
             db.execute("INSERT INTO attendence (id,roll_number,student_name,student_class,class_date_t,section,class_teacher,state,attendence_time,semester,course_unique,teacher_mail,duration)\
             VALUES(:id_t,:roll_t,:sname_t,:scode_t,:c_datet_t,:csec_t,:tname,:type_t,:att_t,:csem_t,:cuni_t,:tmail_t,:cdur_t)",
             id_t = str(curr_time) + "|" + str(x['roll_num']),roll_t = x['roll_num'], sname_t = x['student_name'],scode_t = x['course_code'], c_datet_t = str(curr_date), csec_t = x['section'],
-            tname = x['teacher_name'], att_t = curr_time,type_t = "A", csem_t = x['semester'],cuni_t = course_uni, tmail_t=x['teacher_mail'], cdur_t = int(hours))
+            tname = x['teacher_name'], att_t = str("Not Marked"),type_t = "A", csem_t = x['semester'],cuni_t = course_uni, tmail_t=x['teacher_mail'], cdur_t = int(hours))
 
 
 
         flash(temp_str)
-        return render_template("mark_attendence.html",qr_c=pic)
+        return render_template("teacher/mark_attendence.html",qr_c=pic)
 
 
 
@@ -825,6 +1027,9 @@ def register_student():
         delimit = '|'
         course_code_w_section = delimit.join(course_code_w_section_temp)
 
+        if course_cnt < 2 or course_cnt > 9:
+            return apology("Invalid Number Of Courses. Please Select in range Min:2 Max:9", 400)
+
         # Query database for username
         db.execute("INSERT INTO students (id,roll_num,student_name,num_courses,year,password,courses_reg) VALUES(:id_,:roll,:name,:cour,:y,:hash_pass,:cg)",
                    id_=(unique_id), roll=(str(rnum)).lower(), name=(sname).lower(), cour=course_cnt, y=int(batch), hash_pass=generate_password_hash(password), cg = str(course_code_w_section))
@@ -850,8 +1055,8 @@ def register_student():
     else:
         courses_data = db.execute("SELECT * FROM courses")
 
-        return render_template("register_student.html",courses=courses_data,semester=current_semester)
-    return render_template("register_student.html",courses=courses_data,semester=current_semester)
+        return render_template("student/register_student.html",courses=courses_data,semester=current_semester)
+    return render_template("student/register_student.html",courses=courses_data,semester=current_semester)
         #return redirect("/register")
 
 @app.route("/register/teacher",methods=["GET","POST"])
@@ -953,7 +1158,11 @@ def register_teacher():
         """
     else:
         courses_data = db.execute("SELECT * FROM courses")
-        return render_template("register_teacher.html",courses=courses_data, semester = current_semester)
+        return render_template("teacher/register_teacher.html",courses=courses_data, semester = current_semester)
+
+@app.route("/favicon.ico", methods=["GET"])
+def favicon():
+    return send_file("favicon.ico")
 
 
 @app.route("/register", methods=["GET", "POST"])

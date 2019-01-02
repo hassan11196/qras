@@ -1,4 +1,4 @@
-{% extends "layout.html" %}
+{% extends "student/layout_student.html" %}
 
 {% block title %}
     Student
@@ -31,7 +31,11 @@
                 <td>{{i['course_code']}}</td>
                 <td>{{i['section']}}</td>
                 <td>{{i['teacher_name']}}</td>
-                <td><button class="btn btn-primary">View</button></td>
+                <td>
+                    <form action="student/view" method="GET">
+                        <button class="btn btn-primary" type="submit">View</button>
+                    </form>
+                </td>
             </tr>
             {%endfor%}
         </tbody>
