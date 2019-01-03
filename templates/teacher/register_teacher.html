@@ -39,7 +39,7 @@
 
 
 
-        <div class="form-group">
+        <div class="form-group" id="reg_courses">
             <h1 align="left">Registered Courses</h1>
             <table class="table table-bordered" id="reg_table">
                 <thead>
@@ -86,6 +86,12 @@
                         </table>
         </div>
         -->
+        <script>
+            var x = document.getElementById("reg_courses");
+            x.style.display = "none";
+
+        </script>
+        <h1 align="left">Select Courses</h1>
         <div class="table-responsive">
             <table class="table table-bordered">
                 <thead>
@@ -134,6 +140,12 @@
                             <script>
 
                             function reg_course(){
+                                var el = document.getElementById("reg_courses")
+                                if (x.style.display === "none") {
+                                    x.style.display = "block";
+                                }
+
+
                                 if(cour_id_sec.indexOf(document.getElementById("s_ccode")[document.getElementById("s_ccode").value].text + document.getElementById("s_csection").value) >= 0){
                                     console.log(cour_id_sec.indexOf(document.getElementById("s_ccode")[document.getElementById("s_ccode").value].text + document.getElementById("s_csection").value))
                                     return;

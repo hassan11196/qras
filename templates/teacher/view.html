@@ -6,7 +6,7 @@
 
 {% block main %}
 
-<h1  align = "left"> Registered Courses </h1>
+<h1  align = "left"> Courses Attendence </h1>
 {% set count = ['1'] %}
 <div class="accordian" id="accordian_courses">
     {%for x in cc%}
@@ -52,7 +52,9 @@
                                     <div class="card-body">
                                         <div class="table-responsive" class="card-body">
                                             <table class="table table-striped table-hover ">
-                                                <thead >
+
+
+                                                <thead>
                                                     <th>Sr. #</th>
                                                     <th>Student Name</th>
                                                     <th>Course Code</th>
@@ -64,6 +66,7 @@
                                                     <th>Open Time</th>
                                                     <th>Register Time</th>
                                                 </thead>
+
                                                 <tbody>
                                                     {%set inter_count = ['1']%}
                                                     {% for a in nc[cc.index(x)][z] %}
@@ -81,6 +84,8 @@
                                                                 <td>{{a['id'].split("|")[0].split(".")[0]}}</td>
                                                                 <td>{{a['attendence_time'].split(".")[0]}}</td>
                                                             </tr>
+                                                        {% else %}
+                                                            <tr><td colspan = "10"><h2>No Attendence Taken</h2></td></tr>
                                                         {% endif %}
                                                         {% if inter_count.append('1') %}
                                                         {% endif %}

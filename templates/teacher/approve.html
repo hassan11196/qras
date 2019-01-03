@@ -29,30 +29,35 @@
 
         <tbody>
             {%for i in ac%}
-            <tr>
-                <td>{{ac.index(i) + 1}}</td>
-                <td>{{i['student_name'].title()}}</td>
-                <td>{{i['roll_num'].title()}}</td>
-                <td>{{i['course_code']}}</td>
-                <td>{{i['section']}}</td>
-                <td>{{i['batch']}}</td>
-                <td>{{i['semester']}}</td>
-                <td><button class="btn btn-primary" data-toggle="modal" data-target="#approve_modal" id="{{ac.index(i)}}" onclick = "ac_save_s({{ac.index(i)}})">Approve</button></td>
+            {% if i%}
+                <tr>
+                    <td>{{ac.index(i) + 1}}</td>
+                    <td>{{i['student_name'].title()}}</td>
+                    <td>{{i['roll_num'].title()}}</td>
+                    <td>{{i['course_code']}}</td>
+                    <td>{{i['section']}}</td>
+                    <td>{{i['batch']}}</td>
+                    <td>{{i['semester']}}</td>
+                    <td><button class="btn btn-primary" data-toggle="modal" data-target="#approve_modal" id="{{ac.index(i)}}" onclick = "ac_save_s({{ac.index(i)}})">Approve</button></td>
 
-                <script type="text/javascript" language="JavaScript">
+                    <script type="text/javascript" language="JavaScript">
 
-                        function ac_save_s(inp){
-                            document.getElementById("inner_approve").innerHTML = "Approve " + ac_js[inp]['roll_num'];
-                            document.getElementById("student_name").value = ac_js[inp]['student_name'];
-                            document.getElementById("roll_num").value = ac_js[inp]['roll_num'];
-                            document.getElementById("course_code").value=ac_js[inp]['course_code'];
-                            document.getElementById("course_sec").value=ac_js[inp]['section'];
-                            document.getElementById("course_sem").value =  ac_js[inp]['semester'];
-                            document.getElementById("batch_year").value =  ac_js[inp]['batch'];
-                        }
+                            function ac_save_s(inp){
+                                document.getElementById("inner_approve").innerHTML = "Approve " + ac_js[inp]['roll_num'];
+                                document.getElementById("student_name").value = ac_js[inp]['student_name'];
+                                document.getElementById("roll_num").value = ac_js[inp]['roll_num'];
+                                document.getElementById("course_code").value=ac_js[inp]['course_code'];
+                                document.getElementById("course_sec").value=ac_js[inp]['section'];
+                                document.getElementById("course_sem").value =  ac_js[inp]['semester'];
+                                document.getElementById("batch_year").value =  ac_js[inp]['batch'];
+                            }
 
-                </script>
-            </tr>
+                    </script>
+                </tr>
+            {% else %}
+                <tr><td colspan="6"> No Students Awaiting Approval :)</td></tr>
+
+            {% endif %}
 
             {%endfor%}
 

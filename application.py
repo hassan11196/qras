@@ -187,6 +187,31 @@ def ret_courses_take_code(list_courses):
     return course_dict_list2
 
 
+def ret_courses_section_take_code(list_courses):
+
+    course_list_codes = []
+    for each_course in list_courses:
+        course_list_codes.append(str(each_course['course_code']))
+
+
+    delimit="\",\""
+    course_str=delimit.join(course_list_codes)
+    course_str=str("\"" + course_str + "\"")
+
+    all_cour=[]
+    all_cour = db.execute("SELECT * FROM courses WHERE course_code IN(" + course_str + ")")
+
+    cnt=0
+    course_dict_list2 = []
+    for x in course_list_codes:
+        temp_course_list=next(i for i in all_cour if i["course_code"]==x)
+        #print(temp_course_list)
+        course_dict_list2.append({"id":temp_course_list["id"],"course_name":temp_course_list["course_name"],"course_short":temp_course_list["course_short"],"course_code":temp_course_list["course_code"],"section":list_courses[cnt]['course_sec']})
+        cnt=cnt+1
+
+
+    #print(course_dict_list2)
+    return course_dict_list2
 
 
 # Returns Course name with section in str
@@ -454,17 +479,34 @@ def s_qr():
             print("Student Is Not Registered In This Course.",200)
             return jsonify("Student Is Not Registered In This Course.",200)
         print(course_info)
-
+        print("Min Limit :" + str(data[7]))
         curr_time = str(datetime.now(pytz.timezone("Asia/Karachi")).time())
         date_time = str(datetime.now(pytz.timezone("Asia/Karachi")).date())
         course_uni = str(x['course_code']) + "-" + str(x['section']).upper() + "-" + str(x['semester'])
+
+
+
+        fmt = '%Y-%m-%d %H:%M:%S'
+        print(data[6].split(".")[0])
+        d1 = datetime.strptime(str(data[4].split(".")[0]) +  " " +str(data[6].split(".")[0]), fmt)
+        d2 = datetime.strptime(date_time+ " " +str(curr_time.split(".")[0]), fmt)
+        print("d1 d2" + str(d1) + str(d2))
+        datetime_start = d1
+        datetime_end = d2
+        minutes_diff = (datetime_end - datetime_start).total_seconds() / 60.0
+        print("Minutes Diff : " + str(minutes_diff))
+        if(int(minutes_diff) > int(data[7])):
+            print("Time Diff Greate")
+            return jsonify("Attendence Closed",400)
 
         update_stud = db.execute("UPDATE attendence SET attendence_time=:currtime_t,state=:type_t WHERE course_unique=:cuni_t AND roll_number=:roll_t AND class_date_t=:date_t AND state=:state_t",
         currtime_t = curr_time,type_t = "P", cuni_t = course_uni, roll_t = session['student_roll_num'], date_t = date_time, state_t="A")
 
         if not update_stud:
             print("Attendence NOT UPDATED")
-            return jsonify("NO Attendence",400)
+            return jsonify("NO Attendence or Attendence Already Marked",400)
+
+
 
         #print("cour_student = " + str(cour_student))
 
@@ -475,7 +517,7 @@ def s_qr():
 
 
 
-@app.route("/login_mobile/student_attendence", methods=["POST"])
+@app.route("/login_mobile/student_attendance", methods=["POST"])
 def mobile_student_attendence():
     if request.method == "POST":
         if request.form.get("rollnumber"):
@@ -709,10 +751,20 @@ def teacher_view():
 @teacher_login_required
 def teacher_students():
     if request.method == "GET":
+        only_courses = session['courses_teacher']
+        print(only_courses)
+        my_list = []
+        for x in only_courses:
+            temp = db.execute("SELECT * FROM a_stud WHERE teacher_mail=:tmail_t AND semester=:tsem_t AND course_unique=:ccode_t",
+            tmail_t=session["teacher_mail"],tsem_t=current_semester, ccode_t = x['course_unique'])
+            my_list.append(temp)
+        all_info = ret_courses_section_take_code(only_courses)
+        print(all_info)
+        print("nc: " + str(my_list))
         my = db.execute("SELECT * FROM a_stud WHERE teacher_mail=:tmail_t AND semester=:tsem_t",
         tmail_t=session["teacher_mail"],tsem_t=current_semester)
 
-        return render_template("teacher/students.html",ac = my)
+        return render_template("teacher/students.html",ac = my,cc = only_courses, nc = my_list)
 
 @app.route("/student/view",methods=["GET"])
 @student_login_required
@@ -1115,7 +1167,7 @@ def register_teacher():
             course_reg = db.execute("SELECT * FROM active_courses WHERE course_unique =:uni", uni = x)
             if course_reg:
 
-                return apology(str(course_reg['course_name']) + " Section : " + str(course_reg['section']) + " Already Registered")
+                return apology(str(course_reg[0]['course_name']) + " Section : " + str(course_reg[0]['section']) + " Already Registered")
             else:
                 course_contents = x.split("-") # Where course_contents = e.g ['NS101','A','Fall2018']
                 db.execute("INSERT INTO active_courses (course_code,section,semester,teacher,course_unique,teacher_mail) VALUES(:ccode_t,:csec_t,:csem_t,:tname_t,:cunique_t,:tmail_t)",
