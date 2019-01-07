@@ -1,2 +1,3 @@
 sendgrid.env
-"sendgrid.env" 
+"sendgrid.env"
+__pycache__ 
