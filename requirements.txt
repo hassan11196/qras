@@ -8,3 +8,4 @@ pyqrcode
 pypng
 datetime
 pytz
+colorama

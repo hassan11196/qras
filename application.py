@@ -14,6 +14,8 @@ import calendar
 
 from helpers import apology, login_required, lookup, usd, student_login_required, teacher_login_required
 
+import colorama
+colorama.init()
 
 # using SendGrid's Python Library
 # https://github.com/sendgrid/sendgrid-python
@@ -360,10 +362,6 @@ def after_request(response):
 
     return response
 
-
-# Custom filter
-app.jinja_env.filters["usd"] = usd
-
 # Configure session to use filesystem (instead of signed cookies)
 app.config["SESSION_FILE_DIR"] = mkdtemp()
 app.config["SESSION_PERMANENT"] = False
@@ -619,7 +617,6 @@ def login_mobile_student_post():
         session["courses_student_registered"] = active_courses
         print("Registered Course ->> " + str(session["courses_student_registered"]))
 
-        temp_str = ("Welcome back " + str(rows[0]["student_name"]).title() + ".")
         #flash(temp_str)
         # Redirect user to home page
         course_name_w_section_active = ret_course_name_take_code(active_course_codes)
@@ -1122,7 +1119,7 @@ def register_teacher():
         str_section = "sec"
 
         str_course = "courser"
-        str_course_cnt = 0;
+        str_course_cnt = 0
         course_cnt = 0
         course_code_w_section_temp = []
 
@@ -1196,18 +1193,6 @@ def register_teacher():
         print(temp_str)
         flash(temp_str)
         return redirect("login/teacher")
-
-        """ LEGACY CODE """
-        """
-        # For login
-        session["user_id"] = rows[0]['id']
-        session["teacher_id"] = rows[0]['id']
-
-        # Redirect user to home page
-        temp_str = (str(rows[0]["teacher_name"]).title() + " is Registered.")
-        flash(temp_str)
-        return redirect("/teacher_home")
-        """
     else:
         courses_data = db.execute("SELECT * FROM courses")
         return render_template("teacher/register_teacher.html",courses=courses_data, semester = current_semester)
