@@ -1,3 +1,4 @@
 sendgrid.env
 "sendgrid.env"
-__pycache__ 
+__pycache__/
+.bat 
