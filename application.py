@@ -18,14 +18,11 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from helpers import (apology, login_required, lookup, student_login_required,
                      teacher_login_required, usd)
-from sqlalchemy import create_engine, Column, String
+from sqlalchemy import create_engine, Column, String, Integer
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker    
+from table_classes import *
 
-from course_parser import *
-
-# For colored output on terminal
-colorama.init()
 
 # using SendGrid's Python Library
 # https://github.com/sendgrid/sendgrid-python
@@ -35,20 +32,327 @@ sg = sendgrid.SendGridAPIClient(apikey=os.environ.get('SENDGRID_API_KEY'))
 
 # Configure application
 app = Flask(__name__)
+# Ensure templates are auto-reloaded
+app.config["TEMPLATES_AUTO_RELOAD"] = True
+# For colored output on terminal
+colorama.init()
 """
 import logging
 logging.basicConfig(filename='error.log', level=logging.DEBUG)
 """
 
-# Ensure templates are auto-reloaded
-app.config["TEMPLATES_AUTO_RELOAD"] = True
+
+
 
 # Ensure responses aren't cached
+@app.after_request
+def after_request(response):
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Expires"] = 0
+    response.headers["Pragma"] = "no-cache"
 
+    return response
+
+
+# Configure session to use filesystem (instead of signed cookies)
+app.config["SESSION_FILE_DIR"] = mkdtemp()
+app.config["SESSION_PERMANENT"] = False
+app.config["SESSION_TYPE"] = "filesystem"
+Session(app)
+
+# Configure CS50 Library to use SQLite database
+db = SQL("sqlite:///finance.db")
+# p_studs is DB of Students Courses not verified by teacher of course
 
 # Set Current Semester
 semester_list = ["Fall", "Spring", "Summer"]
 current_semester = str(semester_list[0]) + str(2018)
+
+
+
+# Setting up postgres DataBase
+# 
+# 
+db_string = "postgresql://frpswaheyyrcda:cc7c80c84ac73b88483a235dd381eab4e013506eb84c0190676bbc3f16b55e65@ec2-54-235-178-189.compute-1.amazonaws.com:5432/d904mj7g7okbjj" 
+pdb = create_engine(db_string)
+base = declarative_base()
+
+@app.route("/students/",methods=["GET"])
+def all_students_from_pdb():
+    pdb_Session = sessionmaker(pdb)
+    pdb_session = pdb_Session()
+    # base.metadata.create_all(pdb)
+    all_students = pdb_session.query(students)
+    student_list = []
+    s_list = []
+    for student in all_students:
+        student_list.append(student.data_dict())
+        s_list.append(student.student_name)
+    # print(student_list)
+    return jsonify(student_list)
+
+@app.route('/a_stud',methods=["GET"])
+def all_active_stud():
+    pdb_Session = sessionmaker(pdb)
+    pdb_session = pdb_Session()
+
+    all_active_s = pdb_session.query(a_stud)
+    a_stud_list = []
+    for active_stud in all_active_s:
+       a_stud_list.append(active_stud.data_dict())
+    return jsonify(a_stud_list)    
+
+@app.route('/p_stud', methods=['GET'])
+def all_pending_stud():
+    pdb_Session = sessionmaker(pdb)
+    pdb_session = pdb_Session()
+
+    all_pending_s = pdb_session.query(p_stud)
+    p_stud_list = []
+    for pending_stud in all_pending_s:
+        p_stud_list.append(pending_stud.data_dict())
+    return jsonify(p_stud_list)
+
+def ret_sec(comb):  # comb is list or string of courses
+    if isinstance(comb, list):
+        sec_list = []
+        for i in comb:
+            temp_l = i.split("-")
+            sec_list.append(temp_l[1])
+        return sec_list
+    if isinstance(comb, str):
+        temp_l = comb.split("-")
+        print("hsdsd" + str(temp_l))
+        temp_s = temp_l[1]
+        return temp_s
+
+    return
+
+# IDR THIS Returns Courses in list with string input i.e: EL213-E|EE213-E|CS201-E|CL201-E|CS211-E|MT104-E|MG220-GR2 or EL213-E
+
+
+def ret_cour_list(comb):  # comb is list or string of courses
+    if isinstance(comb, list):
+        sec_list = []
+        for i in comb:
+            temp_l = i.split("-")
+            sec_list.append(temp_l[0])
+        return sec_list
+    if isinstance(comb, str):
+        temp_l = comb.split("-")
+        return temp_l
+
+    return
+
+
+def ret_index(comb, index=0):  # comb is list or string of courses
+    if isinstance(comb, list):
+        sec_list = []
+        for i in comb:
+            temp_l = i.split("-")
+            sec_list.append(temp_l[index])
+        return sec_list
+    if isinstance(comb, str):
+        temp_l = comb.split("-")
+        print("hsdsd" + str(temp_l))
+        temp_s = temp_l[index]
+        return temp_s
+
+    return
+
+# Returns list of courses with dictionatry of info such as section,course short etc
+# Takes Input of list returned by db.execute when SELECT from students or teachers
+
+
+def ret_courses(rows):
+    # print(rows)
+    # print(rows[0])
+    cour = rows[0]['courses_reg'].split("|")
+    # print(cour)
+    course_list = []
+    semester_list = []
+    course_code_dict = {}
+    for each_course in cour:
+        temp = each_course.split("-")
+        course_code_dict[temp[0]] = temp[1]
+        course_list.append(temp[0])
+        semester_list.append(temp[2])
+
+    delimit = "\",\""
+    course_str = delimit.join(course_list)
+    course_str = str("\"" + course_str + "\"")
+    # print(course_str)
+    # print(ret_sec(cour))
+    # print(ret_index(cour,0))
+
+    c_sec_list = ret_sec(cour)
+    course_code_list = ret_index(cour, 0)
+    all_cour = []
+    all_cour = db.execute(
+        "SELECT * FROM courses WHERE course_code IN(" + course_str + ")")
+
+    #print("courses: " + str(all_cour))
+    cnt = 0
+    course_dict_list2 = []
+    for x in course_code_list:
+        temp_course_list = next(i for i in all_cour if i["course_code"] == x)
+        # print(temp_course_list)
+        course_dict_list2.append({"id": temp_course_list["id"], "course_name": temp_course_list["course_name"],
+                                  "course_short": temp_course_list["course_short"], "course_code": temp_course_list["course_code"],
+                                  "course_sec": c_sec_list[cnt], "semester": semester_list[cnt],
+                                  "course_unique": str(str(temp_course_list["course_code"]) + "-" + str(c_sec_list[cnt]) + "-" + str(semester_list[cnt]))})
+        cnt = cnt+1
+
+    # print(course_dict_list2)
+    return course_dict_list2
+
+
+# Returns Pending Courses For Approval for teacher
+def ret_p_courses(list_courses):
+
+    course_list_codes = []
+    for each_course in list_courses:
+        course_list_codes.append(str(each_course['course_code']) + "-" + str(
+            each_course['course_sec']) + "-" + str(current_semester))
+
+    delimit = "\",\""
+    course_str = delimit.join(course_list_codes)
+    course_str = str("\"" + course_str + "\"")
+
+    all_cour = []
+    all_cour = db.execute(
+        "SELECT * FROM p_stud WHERE course_unique IN(" + course_str + ")")
+
+    print(all_cour)
+    return all_cour
+
+
+# Returns Courses like
+"""
+[{'id': 15, 'course_name': 'data structures', 'course_short': 'DS', 'course_code': 'CS201', 'section': 'A'},
+{'id': 16, 'course_name': 'data structures lab', 'course_short': 'DS Lab', 'course_code': 'CL201', 'section': 'B'},
+{'id': 17, 'course_name': 'digital logic design', 'course_short': 'DLD', 'course_code': 'EE227', 'section': 'A'},
+{'id': 18, 'course_name': 'digital logic design lab', 'course_short': 'DLD Lab', 'course_code': 'EL227', 'section': 'A'},
+{'id': 23, 'course_name': 'marketing management', 'course_short': 'MM', 'course_code': 'MG220', 'section': 'GR2'}]
+"""
+# Takes input only course Codes
+
+
+def ret_courses_take_code(list_courses):
+
+    course_list_codes = []
+    for each_course in list_courses:
+        course_list_codes.append(str(each_course['course_code']))
+
+    delimit = "\",\""
+    course_str = delimit.join(course_list_codes)
+    course_str = str("\"" + course_str + "\"")
+
+    all_cour = []
+    all_cour = db.execute(
+        "SELECT * FROM courses WHERE course_code IN(" + course_str + ")")
+
+    cnt = 0
+    course_dict_list2 = []
+    for x in course_list_codes:
+        temp_course_list = next(i for i in all_cour if i["course_code"] == x)
+        # print(temp_course_list)
+        course_dict_list2.append({"id": temp_course_list["id"], "course_name": temp_course_list["course_name"],
+                                  "course_short": temp_course_list["course_short"], "course_code": temp_course_list["course_code"], "section": list_courses[cnt]['section']})
+        cnt = cnt+1
+
+    # print(course_dict_list2)
+    return course_dict_list2
+
+
+def ret_courses_section_take_code(list_courses):
+
+    course_list_codes = []
+    for each_course in list_courses:
+        course_list_codes.append(str(each_course['course_code']))
+
+    delimit = "\",\""
+    course_str = delimit.join(course_list_codes)
+    course_str = str("\"" + course_str + "\"")
+
+    all_cour = []
+    all_cour = db.execute(
+        "SELECT * FROM courses WHERE course_code IN(" + course_str + ")")
+
+    cnt = 0
+    course_dict_list2 = []
+    for x in course_list_codes:
+        temp_course_list = next(i for i in all_cour if i["course_code"] == x)
+        # print(temp_course_list)
+        course_dict_list2.append({"id": temp_course_list["id"], "course_name": temp_course_list["course_name"], "course_short": temp_course_list[
+                                 "course_short"], "course_code": temp_course_list["course_code"], "section": list_courses[cnt]['course_sec']})
+        cnt = cnt+1
+
+    # print(course_dict_list2)
+    return course_dict_list2
+
+
+# Returns Course name with section in str
+"""
+
+"""
+# Takes input only course Codes
+
+
+def ret_course_name_take_code(list_courses):
+
+    course_list_codes = []
+    for each_course in list_courses:
+        course_list_codes.append(str(each_course['course_code']))
+
+    delimit = "\",\""
+    course_str = delimit.join(course_list_codes)
+    course_str = str("\"" + course_str + "\"")
+
+    all_cour = []
+    all_cour = db.execute(
+        "SELECT * FROM courses WHERE course_code IN(" + course_str + ")")
+
+    cnt = 0
+    course_dict_list2 = []
+    course_name_w_sec = " "
+    for x in course_list_codes:
+        temp_course_list = next(i for i in all_cour if i["course_code"] == x)
+        # print(temp_course_list)
+        course_name_w_sec += (str(temp_course_list["course_short"].upper(
+        ) + "-" + str(list_courses[cnt]['section']) + "|"))
+        cnt = cnt+1
+
+    # print(course_dict_list2)
+    return course_name_w_sec
+
+
+# Takes input only course Codes RETURNS Registered Courses List
+def ret_courses_reg(list_courses):
+
+    course_list_codes = []
+    for each_course in list_courses:
+        course_list_codes.append(str(each_course['course_code']))
+
+    delimit = "\",\""
+    course_str = delimit.join(course_list_codes)
+    course_str = str("\"" + course_str + "\"")
+
+    all_cour = []
+    all_cour = db.execute(
+        "SELECT * FROM courses WHERE course_code IN(" + course_str + ")")
+
+    cnt = 0
+    course_dict_list2 = []
+    for x in course_list_codes:
+        temp_course_list = next(i for i in all_cour if i["course_code"] == x)
+        # print(temp_course_list)
+        course_dict_list2.append({"id": temp_course_list["id"], "course_name": temp_course_list["course_name"],
+                                  "course_short": temp_course_list["course_short"], "course_code": temp_course_list["course_code"],
+                                  "section": list_courses[cnt]['section'], 'teacher_name': list_courses[cnt]['teacher_name'], "semester": list_courses[cnt]['semester'], "teacher_mail": list_courses[cnt]['teacher_mail']})
+        cnt = cnt+1
+    # print(course_dict_list2)
+    return course_dict_list2
 
 
 """
@@ -125,26 +429,6 @@ def user_delete(id):
 
     return user_schema.jsonify(user)
 """
-
-
-@app.after_request
-def after_request(response):
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Expires"] = 0
-    response.headers["Pragma"] = "no-cache"
-
-    return response
-
-
-# Configure session to use filesystem (instead of signed cookies)
-app.config["SESSION_FILE_DIR"] = mkdtemp()
-app.config["SESSION_PERMANENT"] = False
-app.config["SESSION_TYPE"] = "filesystem"
-Session(app)
-
-# Configure CS50 Library to use SQLite database
-db = SQL("sqlite:///finance.db")
-# p_studs is DB of Students Courses not verified by teacher of course
 
 
 @app.route("/mail", methods=["GET"])
@@ -1020,3 +1304,4 @@ def errorhandler(e):
 # listen for errors
 for code in default_exceptions:
     app.errorhandler(code)(errorhandler)
+

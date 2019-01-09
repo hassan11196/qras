@@ -1,0 +1,32 @@
+INFO:sqlalchemy.engine.base.Engine:select version()
+INFO:sqlalchemy.engine.base.Engine:{}
+INFO:sqlalchemy.engine.base.Engine:select current_schema()
+INFO:sqlalchemy.engine.base.Engine:{}
+INFO:sqlalchemy.engine.base.Engine:SELECT CAST('test plain returns' AS VARCHAR(60)) AS anon_1
+INFO:sqlalchemy.engine.base.Engine:{}
+INFO:sqlalchemy.engine.base.Engine:SELECT CAST('test unicode returns' AS VARCHAR(60)) AS anon_1
+INFO:sqlalchemy.engine.base.Engine:{}
+INFO:sqlalchemy.engine.base.Engine:show standard_conforming_strings
+INFO:sqlalchemy.engine.base.Engine:{}
+INFO:sqlalchemy.engine.base.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.base.Engine:SELECT students.id AS students_id, students.roll_num AS students_roll_num, students.student_name AS students_student_name, students.num_courses AS students_num_courses, students.password AS students_password, students.username AS students_username, students.courses_reg AS students_courses_reg 
+FROM students
+INFO:sqlalchemy.engine.base.Engine:{}
+INFO:werkzeug:127.0.0.1 - - [08/Jan/2019 11:36:48] "[37mGET /postgresql/ HTTP/1.1[0m" 200 -
+INFO:werkzeug: * Detected change in 'C:\\Users\\Hassan\\Desktop\\Testing\\QRAS\\qras\\application.py', reloading
+INFO:sqlalchemy.engine.base.Engine:select version()
+INFO:sqlalchemy.engine.base.Engine:{}
+INFO:sqlalchemy.engine.base.Engine:select current_schema()
+INFO:sqlalchemy.engine.base.Engine:{}
+INFO:sqlalchemy.engine.base.Engine:SELECT CAST('test plain returns' AS VARCHAR(60)) AS anon_1
+INFO:sqlalchemy.engine.base.Engine:{}
+INFO:sqlalchemy.engine.base.Engine:SELECT CAST('test unicode returns' AS VARCHAR(60)) AS anon_1
+INFO:sqlalchemy.engine.base.Engine:{}
+INFO:sqlalchemy.engine.base.Engine:show standard_conforming_strings
+INFO:sqlalchemy.engine.base.Engine:{}
+INFO:sqlalchemy.engine.base.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.base.Engine:SELECT students.id AS students_id, students.roll_num AS students_roll_num, students.student_name AS students_student_name, students.num_courses AS students_num_courses, students.password AS students_password, students.username AS students_username, students.courses_reg AS students_courses_reg 
+FROM students
+INFO:sqlalchemy.engine.base.Engine:{}
+INFO:werkzeug:127.0.0.1 - - [08/Jan/2019 11:37:08] "[37mGET /postgresql/ HTTP/1.1[0m" 200 -
+INFO:werkzeug: * Detected change in 'C:\\Users\\Hassan\\Desktop\\Testing\\QRAS\\qras\\application.py', reloading

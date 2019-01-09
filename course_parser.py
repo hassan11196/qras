@@ -1,3 +1,6 @@
+from cs50 import SQL
+from application import current_semester
+db = SQL("sqlite:///finance.db")
 
 def ret_sec(comb):  # comb is list or string of courses
     if isinstance(comb, list):
