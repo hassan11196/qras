@@ -1,0 +1,11 @@
+Fcuke
+[{'username': None, 'year': 2017, 'student_name': 'hassan ahmed', 'id': 17003654, 'courses_reg': 'EL213-E-Fall2018|EE213-E-Fall2018|CS201-E-Fall2018|CL201-E-Fall2018|CS211-E-Fall2018|MT104-E-Fall2018|MG220-GR2-Fall2018|CS303-J-Fall2018', 'password': 'pbkdf2:sha256:50000$biYFJoaa$4569d965c6351a6471c2653deebe6f6445463e51d2dbb1539a80df34411382aa', 'num_courses': 8, 'roll_num': '17k-3654'}]
+EL213
+EE213
+CS201
+CL201
+CS211
+MT104
+MG220
+CS303
+[{'course_unique': 'EL213-E-Fall2018', 'semester': 'Fall2018', 'course_sec': 'E', 'sections': 0, 'course_short': 'COAL Lab', 'id': 11, 'students_reg': 3, 'course_code': 'EL213', 'course_name': 'comp. organization & assembly language lab'}, {'course_unique': 'EE213-E-Fall2018', 'semester': 'Fall2018', 'course_sec': 'E', 'sections': 0, 'course_short': 'COAL', 'id': 12, 'students_reg': 3, 'course_code': 'EE213', 'course_name': 'comp. organization & assembly language.'}, {'course_unique': 'CS201-E-Fall2018', 'semester': 'Fall2018', 'course_sec': 'E', 'sections': 0, 'course_short': 'DS', 'id': 15, 'students_reg': 5, 'course_code': 'CS201', 'course_name': 'data structures'}, {'course_unique': 'CL201-E-Fall2018', 'semester': 'Fall2018', 'course_sec': 'E', 'sections': 0, 'course_short': 'DS Lab', 'id': 16, 'students_reg': 5, 'course_code': 'CL201', 'course_name': 'data structures lab'}, {'course_unique': 'CS211-E-Fall2018', 'semester': 'Fall2018', 'course_sec': 'E', 'sections': 0, 'course_short': 'Discrete', 'id': 19, 'students_reg': 4, 'course_code': 'CS211', 'course_name': 'discrete structures'}, {'course_unique': 'MT104-E-Fall2018', 'semester': 'Fall2018', 'course_sec': 'E', 'sections': 0, 'course_short': 'LA', 'id': 22, 'students_reg': 5, 'course_code': 'MT104', 'course_name': 'linear algebra'}, {'course_unique': 'MG220-GR2-Fall2018', 'semester': 'Fall2018', 'course_sec': 'GR2', 'sections': 0, 'course_short': 'MM', 'id': 23, 'students_reg': 5, 'course_code': 'MG220', 'course_name': 'marketing management'}, {'course_unique': 'CS303-J-Fall2018', 'semester': 'Fall2018', 'course_sec': 'J', 'sections': 0, 'course_short': 'SE', 'id': 48, 'students_reg': 0, 'course_code': 'CS303', 'course_name': 'software engineering'}]

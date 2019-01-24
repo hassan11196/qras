@@ -1,3 +1,4 @@
+
 import calendar
 import os
 from datetime import datetime
@@ -9,9 +10,12 @@ import pyqrcode
 import pytz
 import sendgrid
 from cs50 import SQL
+
+
 from flask import (Flask, flash, get_flashed_messages, jsonify, redirect,
                    render_template, request, send_file, session, url_for)
 from flask_session import Session
+
 from sendgrid.helpers.mail import *
 from werkzeug.exceptions import default_exceptions
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -20,8 +24,15 @@ from helpers import (apology, login_required, lookup, student_login_required,
                      teacher_login_required, usd)
 from sqlalchemy import create_engine, Column, String, Integer
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker    
-from table_classes import *
+from sqlalchemy.orm import sessionmaker
+
+# For colored output on terminal
+colorama.init()
+
+
+# Set Current Semester
+semester_list = ["Fall", "Spring", "Summer"]
+current_semester = str(semester_list[0]) + str(2018)
 
 
 # using SendGrid's Python Library
@@ -34,14 +45,11 @@ sg = sendgrid.SendGridAPIClient(apikey=os.environ.get('SENDGRID_API_KEY'))
 app = Flask(__name__)
 # Ensure templates are auto-reloaded
 app.config["TEMPLATES_AUTO_RELOAD"] = True
-# For colored output on terminal
-colorama.init()
+
 """
 import logging
 logging.basicConfig(filename='error.log', level=logging.DEBUG)
 """
-
-
 
 
 # Ensure responses aren't cached
@@ -64,20 +72,16 @@ Session(app)
 db = SQL("sqlite:///finance.db")
 # p_studs is DB of Students Courses not verified by teacher of course
 
-# Set Current Semester
-semester_list = ["Fall", "Spring", "Summer"]
-current_semester = str(semester_list[0]) + str(2018)
-
-
-
 # Setting up postgres DataBase
-# 
-# 
-db_string = "postgresql://frpswaheyyrcda:cc7c80c84ac73b88483a235dd381eab4e013506eb84c0190676bbc3f16b55e65@ec2-54-235-178-189.compute-1.amazonaws.com:5432/d904mj7g7okbjj" 
+db_string = str(os.environ.get('POSTGRESQL_DB_URI'))
+#db_string = "sqlite:///finance.db"
 pdb = create_engine(db_string)
-base = declarative_base()
+from table_classes import *
+from course_parser import *
+from pdb_parsers import *
 
-@app.route("/students/",methods=["GET"])
+
+@app.route("/students/", methods=["GET"])
 def all_students_from_pdb():
     pdb_Session = sessionmaker(pdb)
     pdb_session = pdb_Session()
@@ -91,7 +95,8 @@ def all_students_from_pdb():
     # print(student_list)
     return jsonify(student_list)
 
-@app.route('/a_stud',methods=["GET"])
+
+@app.route('/a_stud', methods=["GET"])
 def all_active_stud():
     pdb_Session = sessionmaker(pdb)
     pdb_session = pdb_Session()
@@ -99,8 +104,9 @@ def all_active_stud():
     all_active_s = pdb_session.query(a_stud)
     a_stud_list = []
     for active_stud in all_active_s:
-       a_stud_list.append(active_stud.data_dict())
-    return jsonify(a_stud_list)    
+        a_stud_list.append(active_stud.data_dict())
+    return jsonify(a_stud_list)
+
 
 @app.route('/p_stud', methods=['GET'])
 def all_pending_stud():
@@ -112,281 +118,6 @@ def all_pending_stud():
     for pending_stud in all_pending_s:
         p_stud_list.append(pending_stud.data_dict())
     return jsonify(p_stud_list)
-
-def ret_sec(comb):  # comb is list or string of courses
-    if isinstance(comb, list):
-        sec_list = []
-        for i in comb:
-            temp_l = i.split("-")
-            sec_list.append(temp_l[1])
-        return sec_list
-    if isinstance(comb, str):
-        temp_l = comb.split("-")
-        print("hsdsd" + str(temp_l))
-        temp_s = temp_l[1]
-        return temp_s
-
-    return
-
-# IDR THIS Returns Courses in list with string input i.e: EL213-E|EE213-E|CS201-E|CL201-E|CS211-E|MT104-E|MG220-GR2 or EL213-E
-
-
-def ret_cour_list(comb):  # comb is list or string of courses
-    if isinstance(comb, list):
-        sec_list = []
-        for i in comb:
-            temp_l = i.split("-")
-            sec_list.append(temp_l[0])
-        return sec_list
-    if isinstance(comb, str):
-        temp_l = comb.split("-")
-        return temp_l
-
-    return
-
-
-def ret_index(comb, index=0):  # comb is list or string of courses
-    if isinstance(comb, list):
-        sec_list = []
-        for i in comb:
-            temp_l = i.split("-")
-            sec_list.append(temp_l[index])
-        return sec_list
-    if isinstance(comb, str):
-        temp_l = comb.split("-")
-        print("hsdsd" + str(temp_l))
-        temp_s = temp_l[index]
-        return temp_s
-
-    return
-
-# Returns list of courses with dictionatry of info such as section,course short etc
-# Takes Input of list returned by db.execute when SELECT from students or teachers
-
-
-def ret_courses(rows):
-    # print(rows)
-    # print(rows[0])
-    cour = rows[0]['courses_reg'].split("|")
-    # print(cour)
-    course_list = []
-    semester_list = []
-    course_code_dict = {}
-    for each_course in cour:
-        temp = each_course.split("-")
-        course_code_dict[temp[0]] = temp[1]
-        course_list.append(temp[0])
-        semester_list.append(temp[2])
-
-    delimit = "\",\""
-    course_str = delimit.join(course_list)
-    course_str = str("\"" + course_str + "\"")
-    # print(course_str)
-    # print(ret_sec(cour))
-    # print(ret_index(cour,0))
-
-    c_sec_list = ret_sec(cour)
-    course_code_list = ret_index(cour, 0)
-    all_cour = []
-    all_cour = db.execute(
-        "SELECT * FROM courses WHERE course_code IN(" + course_str + ")")
-
-    #print("courses: " + str(all_cour))
-    cnt = 0
-    course_dict_list2 = []
-    for x in course_code_list:
-        temp_course_list = next(i for i in all_cour if i["course_code"] == x)
-        # print(temp_course_list)
-        course_dict_list2.append({"id": temp_course_list["id"], "course_name": temp_course_list["course_name"],
-                                  "course_short": temp_course_list["course_short"], "course_code": temp_course_list["course_code"],
-                                  "course_sec": c_sec_list[cnt], "semester": semester_list[cnt],
-                                  "course_unique": str(str(temp_course_list["course_code"]) + "-" + str(c_sec_list[cnt]) + "-" + str(semester_list[cnt]))})
-        cnt = cnt+1
-
-    # print(course_dict_list2)
-    return course_dict_list2
-
-
-# Returns Pending Courses For Approval for teacher
-def ret_p_courses(list_courses):
-
-    course_list_codes = []
-    for each_course in list_courses:
-        course_list_codes.append(str(each_course['course_code']) + "-" + str(
-            each_course['course_sec']) + "-" + str(current_semester))
-
-    delimit = "\",\""
-    course_str = delimit.join(course_list_codes)
-    course_str = str("\"" + course_str + "\"")
-
-    all_cour = []
-    all_cour = db.execute(
-        "SELECT * FROM p_stud WHERE course_unique IN(" + course_str + ")")
-
-    print(all_cour)
-    return all_cour
-
-
-# Returns Courses like
-"""
-[{'id': 15, 'course_name': 'data structures', 'course_short': 'DS', 'course_code': 'CS201', 'section': 'A'},
-{'id': 16, 'course_name': 'data structures lab', 'course_short': 'DS Lab', 'course_code': 'CL201', 'section': 'B'},
-{'id': 17, 'course_name': 'digital logic design', 'course_short': 'DLD', 'course_code': 'EE227', 'section': 'A'},
-{'id': 18, 'course_name': 'digital logic design lab', 'course_short': 'DLD Lab', 'course_code': 'EL227', 'section': 'A'},
-{'id': 23, 'course_name': 'marketing management', 'course_short': 'MM', 'course_code': 'MG220', 'section': 'GR2'}]
-"""
-# Takes input only course Codes
-
-
-def ret_courses_take_code(list_courses):
-
-    course_list_codes = []
-    for each_course in list_courses:
-        course_list_codes.append(str(each_course['course_code']))
-
-    delimit = "\",\""
-    course_str = delimit.join(course_list_codes)
-    course_str = str("\"" + course_str + "\"")
-
-    all_cour = []
-    all_cour = db.execute(
-        "SELECT * FROM courses WHERE course_code IN(" + course_str + ")")
-
-    cnt = 0
-    course_dict_list2 = []
-    for x in course_list_codes:
-        temp_course_list = next(i for i in all_cour if i["course_code"] == x)
-        # print(temp_course_list)
-        course_dict_list2.append({"id": temp_course_list["id"], "course_name": temp_course_list["course_name"],
-                                  "course_short": temp_course_list["course_short"], "course_code": temp_course_list["course_code"], "section": list_courses[cnt]['section']})
-        cnt = cnt+1
-
-    # print(course_dict_list2)
-    return course_dict_list2
-
-
-def ret_courses_section_take_code(list_courses):
-
-    course_list_codes = []
-    for each_course in list_courses:
-        course_list_codes.append(str(each_course['course_code']))
-
-    delimit = "\",\""
-    course_str = delimit.join(course_list_codes)
-    course_str = str("\"" + course_str + "\"")
-
-    all_cour = []
-    all_cour = db.execute(
-        "SELECT * FROM courses WHERE course_code IN(" + course_str + ")")
-
-    cnt = 0
-    course_dict_list2 = []
-    for x in course_list_codes:
-        temp_course_list = next(i for i in all_cour if i["course_code"] == x)
-        # print(temp_course_list)
-        course_dict_list2.append({"id": temp_course_list["id"], "course_name": temp_course_list["course_name"], "course_short": temp_course_list[
-                                 "course_short"], "course_code": temp_course_list["course_code"], "section": list_courses[cnt]['course_sec']})
-        cnt = cnt+1
-
-    # print(course_dict_list2)
-    return course_dict_list2
-
-
-# Returns Course name with section in str
-"""
-
-"""
-# Takes input only course Codes
-
-
-def ret_course_name_take_code(list_courses):
-
-    course_list_codes = []
-    for each_course in list_courses:
-        course_list_codes.append(str(each_course['course_code']))
-
-    delimit = "\",\""
-    course_str = delimit.join(course_list_codes)
-    course_str = str("\"" + course_str + "\"")
-
-    all_cour = []
-    all_cour = db.execute(
-        "SELECT * FROM courses WHERE course_code IN(" + course_str + ")")
-
-    cnt = 0
-    course_dict_list2 = []
-    course_name_w_sec = " "
-    for x in course_list_codes:
-        temp_course_list = next(i for i in all_cour if i["course_code"] == x)
-        # print(temp_course_list)
-        course_name_w_sec += (str(temp_course_list["course_short"].upper(
-        ) + "-" + str(list_courses[cnt]['section']) + "|"))
-        cnt = cnt+1
-
-    # print(course_dict_list2)
-    return course_name_w_sec
-
-
-# Takes input only course Codes RETURNS Registered Courses List
-def ret_courses_reg(list_courses):
-
-    course_list_codes = []
-    for each_course in list_courses:
-        course_list_codes.append(str(each_course['course_code']))
-
-    delimit = "\",\""
-    course_str = delimit.join(course_list_codes)
-    course_str = str("\"" + course_str + "\"")
-
-    all_cour = []
-    all_cour = db.execute(
-        "SELECT * FROM courses WHERE course_code IN(" + course_str + ")")
-
-    cnt = 0
-    course_dict_list2 = []
-    for x in course_list_codes:
-        temp_course_list = next(i for i in all_cour if i["course_code"] == x)
-        # print(temp_course_list)
-        course_dict_list2.append({"id": temp_course_list["id"], "course_name": temp_course_list["course_name"],
-                                  "course_short": temp_course_list["course_short"], "course_code": temp_course_list["course_code"],
-                                  "section": list_courses[cnt]['section'], 'teacher_name': list_courses[cnt]['teacher_name'], "semester": list_courses[cnt]['semester'], "teacher_mail": list_courses[cnt]['teacher_mail']})
-        cnt = cnt+1
-    # print(course_dict_list2)
-    return course_dict_list2
-
-
-"""
- endpoint to create new user
-@app.route("/user", methods=["POST"])
-def add_user():
-    username = request.json['username']
-    email = request.json['email']
-
-    new_user = User(username, email)
-
-    db.session.add(new_user)
-    db.session.commit()
-
-    return jsonify(new_user)
-
-
-# endpoint to show all users
-@app.route("/user", methods=["GET"])
-def get_user():
-    all_users = User.query.all()
-    result = users_schema.dump(all_users)
-    return jsonify(result.data)
-
-"""
-"""
-# endpoint to get user detail by id
-@app.route("/user/<id_>", methods=["GET"])
-def user_detail(id_):
-    user=db.execute("SELECT * FROM users WHERE id=:idx", idx=id_)
-
-    return jsonify(user)
-
-"""
 
 
 @app.route("/course/<cour>", methods=["GET"])
@@ -402,33 +133,6 @@ def course_name_detail(cour):
         "SELECT course_name FROM courses WHERE course_code=:co", co=cour)
 
     return jsonify(c)
-
-
-"""
-# endpoint to update user
-@app.route("/user/<id>", methods=["PUT"])
-def user_update(id):
-    user = User.query.get(id)
-    username = request.json['username']
-    email = request.json['email']
-
-    user.email = email
-    user.username = username
-
-    db.session.commit()
-    return user_schema.jsonify(user)
-
-
-
-# endpoint to delete user
-@app.route("/user/<id>", methods=["DELETE"])
-def user_delete(id):
-    user = User.query.get(id)
-    db.session.delete(user)
-    db.session.commit()
-
-    return user_schema.jsonify(user)
-"""
 
 
 @app.route("/mail", methods=["GET"])
@@ -457,15 +161,24 @@ def about():
 @app.route("/active_courses", methods=["GET"])
 def active_cour():
     if request.method == "GET":
-        active_courses = db.execute("SELECT * FROM active_courses")
-        return render_template("active_courses.html", ac=active_courses)
+        # !! active_courses = db.execute("SELECT * FROM active_courses")
+        pdb_Session = sessionmaker(pdb)
+        pdb_s = pdb_Session()
+        cour_query_list = pdb_s.query(active_courses).all()
+        pdb_active_courses = ret_list(cour_query_list)
+        return render_template("active_courses.html", ac=pdb_active_courses)
 
 
 @app.route("/active_students", methods=["GET"])
 def active_stud():
     if request.method == "GET":
-        active_students = db.execute("SELECT * FROM students")
-        return render_template("active_students.html", ac=active_students)
+        # !! active_students = db.execute("SELECT * FROM students")
+        pdb_Session = sessionmaker(pdb)
+        pdb_s = pdb_Session()
+        stud_query_list = pdb_s.query(students).all()
+        pdb_active_students = ret_list(stud_query_list)
+        pdb_s.close()
+        return render_template("active_students.html", ac=pdb_active_students)
 
 
 @app.route("/")
@@ -697,12 +410,20 @@ def login_mobile_student_post():
 @app.route("/student_home", methods=["GET"])
 @student_login_required
 def stud_home():
-    active_course_codes = db.execute(
-        "SELECT * FROM a_stud WHERE roll_num=:roll_t", roll_t=session['student_roll_num'])
-    active_courses = ret_courses_reg(active_course_codes)
-    pending_course_codes = db.execute(
-        "SELECT * FROM p_stud WHERE roll_num=:roll_t", roll_t=session['student_roll_num'])
-    pending_courses = ret_courses_take_code(pending_course_codes)
+    # !! active_course_codes = db.execute(
+    #     "SELECT * FROM a_stud WHERE roll_num=:roll_t", roll_t=session['student_roll_num'])
+
+    pdb_Session = sessionmaker(pdb)
+    pdbs = pdb_Session()
+    active_course_codes = ret_list(pdbs.query(a_stud).filter(a_stud.roll_num == session['student_roll_num']).all())
+
+    active_courses = pdb_ret_courses_reg(active_course_codes)
+
+    # !! pending_course_codes = db.execute(
+    #     "SELECT * FROM p_stud WHERE roll_num=:roll_t", roll_t=session['student_roll_num'])
+    pending_course_codes = ret_list(pdbs.query(p_stud).filter(p_stud.roll_num == session['student_roll_num']).all())
+    # !!pending_courses = pdb_ret_courses_take_code(pending_course_codes)
+    pending_courses = pdb_ret_courses_reg(pending_course_codes)
 
     session["courses_student_pending"] = pending_courses
     session["courses_student_registered"] = active_courses
@@ -716,15 +437,6 @@ def stud_home():
 @app.route("/teacher_home", methods=["GET", "POST"])
 @teacher_login_required
 def teacher_home():
-    """LEGACY CODE OBSELETE BY ret_courses() func"""
-    """
-    rows = db.execute("SELECT * FROM teachers WHERE id = :t",
-                          t=session['teacher_id'])
-
-
-    p_courses = ret_p_courses(rows)
-    print(rows)
-    """
     if request.method == "GET":
         courses_complete = session["courses_teacher"]
         return render_template("teacher/index.html", refresh=redirect, cc=courses_complete)
@@ -755,20 +467,28 @@ def teacher_approve():
 
         course_uni = str(ccode) + "-" + str(csec).upper() + "-" + str(csem)
 
-        from_p = db.execute(
-            "SELECT * FROM p_stud WHERE roll_num=:roll_t AND course_unique=:cuni_t", roll_t=roll_num, cuni_t=course_uni)
-        db.execute("INSERT INTO a_stud (student_name,roll_num,batch,course_code,semester,course_unique,teacher_name,section,teacher_mail) VALUES(:sname_t,:roll_t,:batch_t,:ccode_t,:csem_t,:cuni_t,:tname_t,:csec_t,:tmail_t)",
-                   sname_t=sname, roll_t=roll_num, batch_t=sbatch, ccode_t=ccode, csem_t=csem, cuni_t=course_uni, tname_t=session['teacher_name'], csec_t=csec, tmail_t=session['teacher_mail'])
-        db.execute("DELETE FROM p_stud WHERE roll_num=:roll_t AND course_unique=:cuni_t",
-                   roll_t=roll_num, cuni_t=course_uni)
+        # !! from_p = db.execute(
+        #     "SELECT * FROM p_stud WHERE roll_num=:roll_t AND course_unique=:cuni_t", roll_t=roll_num, cuni_t=course_uni)
+        # db.execute("INSERT INTO a_stud (student_name,roll_num,batch,course_code,semester,course_unique,teacher_name,section,teacher_mail) VALUES(:sname_t,:roll_t,:batch_t,:ccode_t,:csem_t,:cuni_t,:tname_t,:csec_t,:tmail_t)",
+        #            sname_t=sname, roll_t=roll_num, batch_t=sbatch, ccode_t=ccode, csem_t=csem, cuni_t=course_uni, tname_t=session['teacher_name'], csec_t=csec, tmail_t=session['teacher_mail'])
+        # db.execute("DELETE FROM p_stud WHERE roll_num=:roll_t AND course_unique=:cuni_t",
+        #            roll_t=roll_num, cuni_t=course_uni)
+        pdb_Session = sessionmaker(pdb)
+        pdbs = pdb_Session()
+        from_p = ret_list(pdbs.query(p_stud).filter(p_stud == roll_num and p_stud.course_unique == course_uni).all())
+        approved_student = a_stud(student_name = sname,roll_num = roll_num,batch = sbatch, course_code = ccode,
+                                semester = csem, course_unique = course_uni, teacher_name = session['teacher_name'], section = csec, teacher_mail=session['teacher_mail']) 
+        pdbs.add(approved_student)
+        pdbs.query(p_stud).filter(p_stud.roll_num == roll_num and p_stud.course_unique == course_uni).delete()
+
 
         courses_complete = session["courses_teacher"]
-        course_to_approve = ret_p_courses(courses_complete)
+        course_to_approve = pdb_ret_p_courses(courses_complete)
         return render_template("teacher/approve.html", refresh=redirect, cc=courses_complete, ac=course_to_approve)
 
     if request.method == "GET":
         courses_complete = session["courses_teacher"]
-        course_to_approve = ret_p_courses(courses_complete)
+        course_to_approve = pdb_ret_p_courses(courses_complete)
         return render_template("teacher/approve.html", refresh=redirect, cc=courses_complete, ac=course_to_approve)
 
 
@@ -782,6 +502,7 @@ def teacher_view():
         for x in courses_complete:
             temp = db.execute("SELECT * FROM attendence WHERE teacher_mail=:tmail_t AND course_unique=:cunit_t",
                               tmail_t=session['teacher_mail'], cunit_t=str(x['course_code'] + "-" + x['course_sec'] + "-" + x['semester']))
+            
             sadi_attendence.append(temp)
             date_list = {}
             if temp:
@@ -906,8 +627,13 @@ def login_student():
             return apology("must provide password", 400)
 
         # Query database for username
-        rows = db.execute("SELECT * FROM students WHERE roll_num = :username",
-                          username=(request.form.get("rollnumber")).lower())
+        # !! rows = db.execute("SELECT * FROM students WHERE roll_num = :username",
+        #                   username=(request.form.get("rollnumber")).lower()) 
+        pdb_Session = sessionmaker(pdb)
+        pdbs = pdb_Session()
+
+        rows = ret_list(pdbs.query(students).filter(students.roll_num == (request.form.get("rollnumber")).lower()).all())
+                          
         if(len(rows) != 1):
             return apology("Roll Number Not Registered.", 400)
 
@@ -926,16 +652,6 @@ def login_student():
         session["student_roll_num"] = roll_num
         session["courses_student"] = course_dict_list2
 
-        active_course_codes = db.execute(
-            "SELECT * FROM a_stud WHERE roll_num=:roll_t", roll_t=session['student_roll_num'])
-        active_courses = ret_courses_reg(active_course_codes)
-        pending_course_codes = db.execute(
-            "SELECT * FROM p_stud WHERE roll_num=:roll_t", roll_t=session['student_roll_num'])
-        pending_courses = ret_courses_take_code(pending_course_codes)
-
-        session["courses_student_pending"] = pending_courses
-        session["courses_student_registered"] = active_courses
-
         temp_str = ("Welcome back " +
                     str(rows[0]["student_name"]).title() + ".")
         flash(temp_str)
@@ -945,7 +661,6 @@ def login_student():
         if session.get("student_id"):
             return redirect("/student_home")
         return render_template("student/login_student.html")
-
 
 @app.route("/login/teacher", methods=["GET", "POST"])
 def login_teacher():
@@ -1103,7 +818,6 @@ def mart_att():
 
 @app.route("/register/student", methods=["GET", "POST"])
 def register_student():
-    print("STUDENT CLICKED")
     if request.method == "POST":
         # Ensure username was submitted
         if not request.form.get("rollnumber"):
@@ -1125,29 +839,45 @@ def register_student():
         elif (request.form.get("password") != request.form.get("confirmation")):
             return apology("Passwords are not same.", 400)
 
-        elif (db.execute("SELECT * FROM students WHERE roll_num = :roll", roll=request.form.get("rollnumber").lower())):
-            return apology("Roll Number is already registered.", 400)
-
         rnum = request.form.get("rollnumber").lower()
         sname = request.form.get("student_name").lower()
         batch = request.form.get("batch")
         password = request.form.get("password")
         unique_id = int(rnum[4:]) + (int(rnum[:2])*1000000)
 
-        course = db.execute("SELECT * FROM courses")
+        pdb_Session = sessionmaker(pdb)
+        pdb_session = pdb_Session()
+
+        already_registered = pdb_session.query(students).filter(
+            students.roll_num == password).all()
+
+        if already_registered:
+            return apology("Roll Number is already Registered.", 400)
+
+        #course = db.execute("SELECT * FROM courses")
+        course = pdb_session.query(courses)
         course_cnt = 0
         course_code_w_section_temp = []
         for x in course:
-            if request.form.get(str(x['course_code'])):
-                course_code_w_section_temp.append(str(x['course_code']) + "-" + str(
-                    request.form.get(str(x['course_code']))).upper() + "-" + current_semester)
-                cunique = str(x['course_code']) + "-" + str(request.form.get(
-                    str(x['course_code']))).upper() + "-" + current_semester
+            if request.form.get(str(x.course_code)):
+
+                course_code_w_section_temp.append(
+                    str(x.course_code) + "-" + str(request.form.get(str(x.course_code))).upper() + "-" + current_semester)
+
+                cunique = str(x.course_code) + "-" + str(request.form.get(
+                    str(x.course_code))).upper() + "-" + current_semester
+
                 db.execute("INSERT INTO p_stud (student_name,course_code,section,roll_num,batch,semester,course_unique) VALUES(:sname_t,:ccode_t,:csec_t,:sroll_t,:sbatch_t,:sem_t,:cuni_t)",
-                           sname_t=sname, ccode_t=str(x['course_code']), csec_t=str(request.form.get(str(x['course_code']))).upper(), sroll_t=rnum, sbatch_t=batch, sem_t=current_semester, cuni_t=cunique)
+                           sname_t=sname, ccode_t=str(x.course_code), csec_t=str(request.form.get(str(x.course_code))).upper(), sroll_t=rnum, sbatch_t=batch, sem_t=current_semester, cuni_t=cunique)
+                pending_course = p_stud(student_name=sname, course_code=str(x.course_code), section=str(request.form.get(
+                    str(x.course_code))).upper(), roll_num=rnum, batch=batch, semester=current_semester, course_unique=cunique)
+
+                pdb_session.add(pending_course)
                 course_cnt = course_cnt + 1
+
         if(not course_code_w_section_temp):
             return apology("No Courses Selected.", 400)
+
         delimit = '|'
         course_code_w_section = delimit.join(course_code_w_section_temp)
 
@@ -1155,13 +885,21 @@ def register_student():
             return apology("Invalid Number Of Courses. Please Select in range Min:2 Max:9", 400)
 
         # Query database for username
-        db.execute("INSERT INTO students (id,roll_num,student_name,num_courses,year,password,courses_reg) VALUES(:id_,:roll,:name,:cour,:y,:hash_pass,:cg)",
-                   id_=(unique_id), roll=(str(rnum)).lower(), name=(sname).lower(), cour=course_cnt, y=int(batch), hash_pass=generate_password_hash(password), cg=str(course_code_w_section))
+        # db.execute("INSERT INTO students (id,roll_num,student_name,num_courses,year,password,courses_reg) VALUES(:id_,:roll,:name,:cour,:y,:hash_pass,:cg)",
+                #    id_=(unique_id), roll=(str(rnum)).lower(), name=(sname).lower(), cour=course_cnt, y=int(batch), hash_pass=generate_password_hash(password), cg=str(course_code_w_section))
+
+        new_student = students(id=unique_id, roll_num=(str(rnum)).lower(), student_name=sname, num_courses=course_cnt, batch=int(
+            batch), password=generate_password_hash(password), courses_reg=str(course_code_w_section))
+        pdb_session.add(new_student)
+        pdb_session.commit()
 
         rows = db.execute(
             "SELECT * FROM students WHERE roll_num =:roll", roll=(str(rnum)).lower())
-        temp_str = (str(rows[0]["student_name"]).title() +
-                    " is Registered. Please Login")
+        reg_student = pdb_session.query(students).filter(
+            students.roll_num == str(rnum).lower()).all()
+
+        temp_str = (str(reg_student[0].data_dict()["student_name"]).title(
+        ) + " is Registered. Please Login")
         print(temp_str)
         flash(temp_str)
         return redirect("/login/student")
@@ -1304,4 +1042,3 @@ def errorhandler(e):
 # listen for errors
 for code in default_exceptions:
     app.errorhandler(code)(errorhandler)
-
