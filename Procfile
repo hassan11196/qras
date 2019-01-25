@@ -1,1 +1,1 @@
-web: flask run --reload
+web: python application.py
