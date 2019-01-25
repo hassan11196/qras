@@ -77,6 +77,7 @@ db_string = str(os.environ.get('POSTGRESQL_DB_URI'))
 print(db_string)
 #db_string = "sqlite:///finance.db"
 pdb = create_engine(db_string)
+print(pdb is None)
 from table_classes import *
 from course_parser import *
 from pdb_parsers import *
