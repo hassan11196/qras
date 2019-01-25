@@ -185,6 +185,7 @@ def active_stud():
 @app.route("/")
 @login_required
 def index():
+    print("Index Page")
     return redirect("/login")
 
 
