@@ -612,7 +612,7 @@ def login():
     # Forget any user_id
     session.clear()
     # User reached route via GET (as by clicking a link or via redirect)
-    flash("Welcome")
+    flash("Welcome - Site Currently under further develpoment, current storage is not permananent")
     return render_template("login.html")
 
 
