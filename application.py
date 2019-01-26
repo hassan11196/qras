@@ -1043,3 +1043,8 @@ def errorhandler(e):
 # listen for errors
 for code in default_exceptions:
     app.errorhandler(code)(errorhandler)
+
+if __name__ == '__main__':
+        import os  
+        port = int(os.environ.get('PORT', 80)) 
+        app.run(host='0.0.0.0', port=port)
