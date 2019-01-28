@@ -1,4 +1,3 @@
-
 import calendar
 import os
 from datetime import datetime
@@ -29,11 +28,9 @@ from sqlalchemy.orm import sessionmaker
 # For colored output on terminal
 colorama.init()
 
-
 # Set Current Semester
 semester_list = ["Fall", "Spring", "Summer"]
 current_semester = str(semester_list[0]) + str(2018)
-
 
 # using SendGrid's Python Library
 # https://github.com/sendgrid/sendgrid-python
@@ -51,7 +48,6 @@ import logging
 logging.basicConfig(filename='error.log', level=logging.DEBUG)
 """
 
-
 # Ensure responses aren't cached
 @app.after_request
 def after_request(response):
@@ -60,7 +56,6 @@ def after_request(response):
     response.headers["Pragma"] = "no-cache"
 
     return response
-
 
 # Configure session to use filesystem (instead of signed cookies)
 app.config["SESSION_FILE_DIR"] = mkdtemp()
@@ -74,14 +69,12 @@ db = SQL("sqlite:///finance.db")
 
 # Setting up postgres DataBase
 db_string = str(os.environ.get('POSTGRESQL_DB_URI'))
-print(db_string)
-#db_string = "sqlite:///finance.db"
 pdb = create_engine(db_string)
-print(pdb is None)
+#db_string = "sqlite:///finance.db"
+
 from table_classes import *
 from course_parser import *
 from pdb_parsers import *
-
 
 @app.route("/students/", methods=["GET"])
 def all_students_from_pdb():
@@ -135,7 +128,6 @@ def course_name_detail(cour):
         "SELECT course_name FROM courses WHERE course_code=:co", co=cour)
 
     return jsonify(c)
-
 
 @app.route("/mail", methods=["GET"])
 def mail():
@@ -505,8 +497,6 @@ def teacher_view():
         for x in courses_complete:
             temp = db.execute("SELECT * FROM attendence WHERE teacher_mail=:tmail_t AND course_unique=:cunit_t",
                               tmail_t=session['teacher_mail'], cunit_t=str(x['course_code'] + "-" + x['course_sec'] + "-" + x['semester']))
-            
-            sadi_attendence.append(temp)
             date_list = {}
             if temp:
                 i = 0
@@ -545,16 +535,21 @@ def teacher_students():
         print(only_courses)
         my_list = []
         for x in only_courses:
-            temp = db.execute("SELECT * FROM a_stud WHERE teacher_mail=:tmail_t AND semester=:tsem_t AND course_unique=:ccode_t",
-                              tmail_t=session["teacher_mail"], tsem_t=current_semester, ccode_t=x['course_unique'])
-            my_list.append(temp)
+            # !! temp = db.execute("SELECT * FROM a_stud WHERE teacher_mail=:tmail_t AND semester=:tsem_t AND course_unique=:ccode_t",
+            #                   tmail_t=session["teacher_mail"], tsem_t=current_semester, ccode_t=x['course_unique'])
+            pdb_Session = sessionmaker(pdb)
+            pdbs = pdb_Session()
+            temp2 = ret_list(pdbs.query(a_stud).filter(a_stud.teacher_mail == session["teacher_mail"] and a_stud.semester == current_semester and a_stud.course_unique == x['course_unique']))
+            
+            my_list.append(temp2)
         all_info = ret_courses_section_take_code(only_courses)
         print(all_info)
-        print("nc: " + str(my_list))
-        my = db.execute("SELECT * FROM a_stud WHERE teacher_mail=:tmail_t AND semester=:tsem_t",
-                        tmail_t=session["teacher_mail"], tsem_t=current_semester)
+        
+        # !! my = db.execute("SELECT * FROM a_stud WHERE teacher_mail=:tmail_t AND semester=:tsem_t",
+        #                 tmail_t=session["teacher_mail"], tsem_t=current_semester)
+        my2 = ret_list(pdbs.query(a_stud).filter(a_stud.teacher_mail == session["teacher_mail"] and a_stud.semester == current_semester ))
 
-        return render_template("teacher/students.html", ac=my, cc=only_courses, nc=my_list)
+        return render_template("teacher/students.html", ac=my2, cc=only_courses, nc=my_list)
 
 
 @app.route("/student/view", methods=["GET"])
@@ -696,45 +691,6 @@ def login_teacher():
         stud = db.execute("SELECT * FROM teachers WHERE id=:id_",
                           id_=session['teacher_id'])
 
-        """
-        #print(stud[0])
-        cour = stud[0]['courses_reg'].split("|")
-        #print(cour)
-        c_sec_list = ret_sec(cour)
-        #print(c_sec_list)
-        course_list=[]
-        course_dict_list = []
-        course_dict_list2 = []
-        course_code_dict = {}
-        course_code_list = []
-        course_sec = {}
-        for each_course in cour:
-            temp = each_course.split("-")
-            course_code_dict[(temp[0])] = temp[1]
-            course_code_list.append(temp[0])
-            course_dict_list.append({temp[0]:temp[1]})
-            course_list.append(temp[0])
-
-        #print("course_dict_list: " + str(course_dict_list))
-        #print("course_list: " + str(course_dict_list))
-        #print("course_code_dict : " + str(course_code_dict))
-        #print("course_code_list : " + str(course_code_list))
-        #print("courses:")
-        delimit="\",\""
-        course_str=delimit.join(course_list)
-        course_str=str("\"" + course_str + "\"")
-        print(course_str)
-        all_cour=[]
-        all_cour = db.execute("SELECT * FROM courses WHERE course_code IN(" + course_str + ")")
-        print("courses: " + str(all_cour))
-        cnt=0
-        for x in course_code_list:
-            temp_course_list=next(i for i in all_cour if i["course_code"]==x)
-            #print(temp_course_list)
-            course_dict_list2.append({"id":temp_course_list["id"],"course_name":temp_course_list["course_name"],"course_short":temp_course_list["course_short"],"course_code":temp_course_list["course_code"],"course_sec":c_sec_list[cnt]})
-            cnt=cnt+1
-        print(course_dict_list2)
-        """
         course_dict_list2 = []
         course_dict_list2 = ret_courses(rows)
         session["teacher_name"] = (rows[0]["teacher_name"]).lower()
@@ -907,18 +863,6 @@ def register_student():
         flash(temp_str)
         return redirect("/login/student")
 
-        """ LEGACY CODE """
-        """
-        # For login
-        session["user_id"] = rows[0]['id']
-        session["student_id"] = rows[0]['id']
-
-        # Redirect user to home page
-        temp_str = (str(rows[0]["student_name"]).title() + " is Registered.")
-        print(temp_str)
-        flash(temp_str)
-        return redirect("/student_home")
-        """
     else:
         courses_data = db.execute("SELECT * FROM courses")
 
