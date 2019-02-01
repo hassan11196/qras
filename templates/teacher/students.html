@@ -6,67 +6,68 @@
 
 {% block main %}
 
-
+<h1  align = "left">Students Registered in my classes for FALL2018</h1>
+<br>
 <div class="accordian" id="j_accordian_courses">
     <script type="text/javascript" src="{{ url_for('static', filename='jsstudents.js') }}">
-    </script> 
+    </script>
     <script>
             var outer_div = document.getElementById("j_accordian_courses");
             var j_cc = {{cc | tojson}};
-            display_courses(outer_div, j_cc);
+            var j_nc = {{nc | tojson}};
+            display_courses(outer_div, j_cc,j_nc);
     </script>
 </div>
-<h1  align = "left">Students Registered in my classes for FALL2018</h1>
-<br>
-<div class="accordian" id="accordian_courses">
-    {%for x in cc%}
-        <div class="card">
-            <div class="card-header">
-                <h2 class="mb-0">
-                    <button class="btn btn-outline-info btn-lg btn-block" style="white-space: normal !important;word-wrap: break-word !important;" type="button" data-toggle="collapse" aria-expanded="false" data-target="#{{x['course_unique']}}">
-                        {{x['course_name'].title()}} - {{x['course_sec']}} - {{x['semester']}}
-                    </button>
-                </h2>
-            </div>
-            <div id="{{x['course_unique']}}" class="collapse" data-parent="accordian_courses">
-                <div class="card-body">
-                    <div class="table-responsive" class="card-body">
-                        <table class="table table-striped table-hover">
-                            <thead>
-                                <th>Sr. #</th>
-                                <th>Student Name</th>
-                                <th>Roll Number</th>
-                                <th>Semester</th>
-                                <th>Batch</th>
-                                <th>Course</th>
-                                <th>Course Section</th>
-                            </thead>
-                            <tbody>
-                                {%for z in nc[cc.index(x)]%}
-                                    {%if z%}
+
+<!--<div class="accordian" id="accordian_courses">-->
+<!--    {%for x in cc%}-->
+<!--        <div class="card">-->
+<!--            <div class="card-header">-->
+<!--                <h2 class="mb-0">-->
+<!--                    <button class="btn btn-outline-info btn-lg btn-block" style="white-space: normal !important;word-wrap: break-word !important;" type="button" data-toggle="collapse" aria-expanded="false" data-target="#{{x['course_unique']}}">-->
+<!--                        {{x['course_name'].title()}} - {{x['course_sec']}} - {{x['semester']}}-->
+<!--                    </button>-->
+<!--                </h2>-->
+<!--            </div>-->
+<!--            <div id="{{x['course_unique']}}" class="collapse" data-parent="accordian_courses">-->
+<!--                <div class="card-body">-->
+<!--                    <div class="table-responsive" class="card-body">-->
+<!--                        <table class="table table-striped table-hover">-->
+<!--                            <thead>-->
+<!--                                <th>Sr. #</th>-->
+<!--                                <th>Student Name</th>-->
+<!--                                <th>Roll Number</th>-->
+<!--                                <th>Semester</th>-->
+<!--                                <th>Batch</th>-->
+<!--                                <th>Course</th>-->
+<!--                                <th>Course Section</th>-->
+<!--                            </thead>-->
+<!--                            <tbody>-->
+<!--                                {%for z in nc[cc.index(x)]%}-->
+<!--                                    {%if z%}-->
 
 
-                                        <tr>
-                                            <td>{{nc[cc.index(x)].index(z) + 1}}</td>
-                                            <td>{{z['student_name'].title()}}</td>
-                                            <td>{{z['roll_num'].upper()}}</td>
-                                            <td>{{z['semester']}}</td>
-                                            <td>{{z['batch']}}</td>
-                                            <td>{{z['course_code']}}</td>
-                                            <td>{{z['section']}}</td>
-                                        </tr>
+<!--                                        <tr>-->
+<!--                                            <td>{{nc[cc.index(x)].index(z) + 1}}</td>-->
+<!--                                            <td>{{z['student_name'].title()}}</td>-->
+<!--                                            <td>{{z['roll_num'].upper()}}</td>-->
+<!--                                            <td>{{z['semester']}}</td>-->
+<!--                                            <td>{{z['batch']}}</td>-->
+<!--                                            <td>{{z['course_code']}}</td>-->
+<!--                                            <td>{{z['section']}}</td>-->
+<!--                                        </tr>-->
 
-                                    {%endif%}
-                                {%endfor%}
-                            </tbody>
-                        </table>
-                    </div>
+<!--                                    {%endif%}-->
+<!--                                {%endfor%}-->
+<!--                            </tbody>-->
+<!--                        </table>-->
+<!--                    </div>-->
 
-                </div>
-            </div>
+<!--                </div>-->
+<!--            </div>-->
 
-        </div>
-    {%endfor%}
-</div>
+<!--        </div>-->
+<!--    {%endfor%}-->
+<!--</div>-->
 
 {% endblock %}

@@ -472,7 +472,7 @@ def teacher_approve():
         pdbs = pdb_Session()
         from_p = ret_list(pdbs.query(p_stud).filter(p_stud == roll_num and p_stud.course_unique == course_uni).all())
         approved_student = a_stud(student_name = sname,roll_num = roll_num,batch = sbatch, course_code = ccode,
-                                semester = csem, course_unique = course_uni, teacher_name = session['teacher_name'], section = csec, teacher_mail=session['teacher_mail']) 
+                                semester = csem, course_unique = course_uni, teacher_name = session['teacher_name'], section = csec, teacher_mail=session['teacher_mail'])
         pdbs.add(approved_student)
         pdbs.query(p_stud).filter(p_stud.roll_num == roll_num and p_stud.course_unique == course_uni).delete()
 
@@ -534,21 +534,34 @@ def teacher_students():
         only_courses = session['courses_teacher']
         print(only_courses)
         my_list = []
+        my_prev = []
+        pdb_Session = sessionmaker(pdb)
+        pdbs = pdb_Session()
         for x in only_courses:
-            # !! temp = db.execute("SELECT * FROM a_stud WHERE teacher_mail=:tmail_t AND semester=:tsem_t AND course_unique=:ccode_t",
-            #                   tmail_t=session["teacher_mail"], tsem_t=current_semester, ccode_t=x['course_unique'])
-            pdb_Session = sessionmaker(pdb)
-            pdbs = pdb_Session()
-            temp2 = ret_list(pdbs.query(a_stud).filter(a_stud.teacher_mail == session["teacher_mail"] and a_stud.semester == current_semester and a_stud.course_unique == x['course_unique']))
-            
+            temp = db.execute("SELECT * FROM a_stud WHERE teacher_mail=:tmail_t AND semester=:tsem_t AND course_unique=:ccode_t",
+                               tmail_t=session["teacher_mail"], tsem_t=current_semester, ccode_t=x['course_unique'])
+
+            temp2 = ret_list(pdbs.query(a_stud).filter(a_stud.teacher_mail == session["teacher_mail"],a_stud.semester == current_semester,a_stud.course_unique == x['course_unique']).all())
+            print(x['course_unique'])
+            print("temp")
+            print(temp)
+            print(temp2)
+            my_prev.append(temp)
             my_list.append(temp2)
         all_info = ret_courses_section_take_code(only_courses)
-        print(all_info)
-        
-        # !! my = db.execute("SELECT * FROM a_stud WHERE teacher_mail=:tmail_t AND semester=:tsem_t",
-        #                 tmail_t=session["teacher_mail"], tsem_t=current_semester)
-        my2 = ret_list(pdbs.query(a_stud).filter(a_stud.teacher_mail == session["teacher_mail"] and a_stud.semester == current_semester ))
+        #print(all_info)
+        print("my prev")
+        print(my_prev)
+        print("my list")
+        print(my_list)
+        my = db.execute("SELECT * FROM a_stud WHERE teacher_mail=:tmail_t AND semester=:tsem_t",
+                         tmail_t=session["teacher_mail"], tsem_t=current_semester)
 
+        my2 = ret_list(pdbs.query(a_stud).filter(a_stud.teacher_mail == session["teacher_mail"] and a_stud.semester == current_semester ))
+        print("my")
+        print(my)
+        print("my2")
+        print(my2)
         return render_template("teacher/students.html", ac=my2, cc=only_courses, nc=my_list)
 
 
@@ -626,12 +639,12 @@ def login_student():
 
         # Query database for username
         # !! rows = db.execute("SELECT * FROM students WHERE roll_num = :username",
-        #                   username=(request.form.get("rollnumber")).lower()) 
+        #                   username=(request.form.get("rollnumber")).lower())
         pdb_Session = sessionmaker(pdb)
         pdbs = pdb_Session()
 
         rows = ret_list(pdbs.query(students).filter(students.roll_num == (request.form.get("rollnumber")).lower()).all())
-                          
+
         if(len(rows) != 1):
             return apology("Roll Number Not Registered.", 400)
 
@@ -991,6 +1004,6 @@ for code in default_exceptions:
     app.errorhandler(code)(errorhandler)
 
 if __name__ == '__main__':
-        import os  
-        port = int(os.environ.get('PORT', 80)) 
+        import os
+        port = int(os.environ.get('PORT', 80))
         app.run(host='0.0.0.0', port=port)
