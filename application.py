@@ -147,7 +147,6 @@ def mail():
 
 
 @app.route("/about", methods=["GET", "POST"])
-@login_required
 def about():
     return render_template("about.html")
 
