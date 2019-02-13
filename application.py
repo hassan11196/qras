@@ -369,40 +369,57 @@ def login_mobile_student_post():
         elif not request.form.get("password"):
             return apology("must provide password", 400)
 
-        print(request.form.get("password"))
+        pdb_Session = sessionmaker(pdb)
+        pdb_session = pdb_Session()
 
         # Query database for username
-        rows = db.execute("SELECT * FROM students WHERE roll_num = :username",
-                          username=(request.form.get("rollnumber")).lower())
+        # !! rows = db.execute("SELECT * FROM students WHERE roll_num = :username",
+        #                   username=(request.form.get("rollnumber")).lower())
+
+        rows = ret_list(pdb_session.query(students).filter(students.roll_num == request.form.get("rollnumber").lower()).all())
 
         if(not rows):
             print("Invalid Roll Number")
+            pdb_session.close()
             return jsonify("Invalid Roll Number")
         print(rows[0])
         if(len(rows) != 1):
+            pdb_session.close()
             print("Invalid Roll Number")
             return jsonify("Roll Number Not Registered.")
 
         # Ensure username exists and password is correct
         if len(rows) != 1 or not check_password_hash(rows[0]["password"], request.form.get("password")):
             print("Invalid password")
+            pdb_session.close()
             return jsonify("invalid password")
 
         roll_num = request.form.get("rollnumber")
 
-        course_dict_list2 = ret_courses(rows)
+        course_dict_list2 = pdb_ret_courses(rows)
         print("LOGIN BY : " + str(course_dict_list2))
         # Remember which user has logged in
         session["user_id"] = rows[0]["id"]
         session["student_id"] = rows[0]["id"]
         session["student_roll_num"] = roll_num
         session["courses_student"] = course_dict_list2
-        active_course_codes = db.execute(
-            "SELECT * FROM a_stud WHERE roll_num=:roll_t", roll_t=session['student_roll_num'])
-        active_courses = ret_courses_reg(active_course_codes)
-        pending_course_codes = db.execute(
-            "SELECT * FROM p_stud WHERE roll_num=:roll_t", roll_t=session['student_roll_num'])
-        pending_courses = ret_courses_take_code(pending_course_codes)
+
+        # !! active_course_codes = db.execute(
+        #     "SELECT * FROM a_stud WHERE roll_num=:roll_t", roll_t=session['student_roll_num'])
+        # active_courses = ret_courses_reg(active_course_codes)
+        
+        
+        active_course_codes = ret_list(pdbs.query(a_stud).filter(a_stud.roll_num == session['student_roll_num']).all())
+
+        active_courses = pdb_ret_courses_reg(active_course_codes)
+
+        # !! pending_course_codes = db.execute(
+        #     "SELECT * FROM p_stud WHERE roll_num=:roll_t", roll_t=session['student_roll_num'])
+        pending_course_codes = ret_list(pdbs.query(p_stud).filter(p_stud.roll_num == session['student_roll_num']).all())
+        # !!pending_courses = pdb_ret_courses_take_code(pending_course_codes)
+        pending_courses = pdb_ret_courses_reg(pending_course_codes)
+
+
         session["courses_student_pending"] = pending_courses
         session["courses_student_registered"] = active_courses
         print("Registered Course ->> " +
@@ -410,15 +427,15 @@ def login_mobile_student_post():
 
         # flash(temp_str)
         # Redirect user to home page
-        course_name_w_section_active = ret_course_name_take_code(
+        course_name_w_section_active = pdb_ret_courses_reg(
             active_course_codes)
-        course_name_w_section_pending = ret_course_name_take_code(
+        course_name_w_section_pending = pdb_ret_courses_reg(
             pending_course_codes)
 
         print(course_name_w_section_active)
         print(course_name_w_section_pending)
 
-        return jsonify(str(rows[0]['student_name']) + "," + str(len(active_course_codes)) + "," + str(course_name_w_section_active)
+        return jsonify(str(rows[0]['student_name'].title()) + "," + str(len(active_course_codes)) + "," + str(course_name_w_section_active)
                        + "," + str(len(pending_course_codes)) + "," + str(course_name_w_section_pending))
 
     return redirect("/student_home")
