@@ -94,7 +94,7 @@ class active_courses(base):
         return d
 
 
-class attendance():
+class attendance(base):
     __tablename__ = "attendance"
     id = Column(String, primary_key=True)
     roll_num = Column(String)
@@ -180,6 +180,32 @@ class p_stud(base):
         else:
             raise ValueError("INVALID NUMBER OF INPUTS")    
 
+
+    def data_dict(self):
+        d = {x: y for x, y in vars(self).items() if not x.startswith('_')}
+        return d
+
+class teachers(base):
+    __tablename__ = "teachers"
+    id = Column(Integer, primary_key=True)
+    teacher_name = Column(String)
+    username = Column(String)
+    password = Column(String)
+    courses_reg = Column(String)
+    course_cnt = Column(String)
+    teacher_mail = Column(String)
+
+    def __init__(self,**kwargs):
+        if len(kwargs.keys()) >= 7:
+            self.id = kwargs['id']
+            self.username = kwargs['username']
+            self.password = kwargs['password']
+            self.teacher_name = kwargs['teacher_name']
+            self.course_cnt = kwargs['course_cnt']
+            self.courses_reg = kwargs['courses_reg']
+            self.teacher_mail = kwargs['teacher_mail']
+        else:
+            raise ValueError("INVALID NUMBER OF INPUTS")
 
     def data_dict(self):
         d = {x: y for x, y in vars(self).items() if not x.startswith('_')}

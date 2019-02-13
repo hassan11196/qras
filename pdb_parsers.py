@@ -1,3 +1,8 @@
+"""
+Example of session['courses_teacher']
+[{'id': 15, 'course_name': 'data structures', 'course_short': 'DS', 'course_code': 'CS201', 'course_sec': 'E', 'semester': 'Fall2018', 'course_unique': 'CS201-E-Fall2018'}, {'id': 15, 'course_name': 'data structures', 'course_short': 'DS', 'course_code': 'CS201', 'course_sec': 'A', 'semester': 'Fall2018', 'course_unique': 'CS201-A-Fall2018'}, {'id': 15, 'course_name': 'data structures', 'course_short': 'DS', 'course_code': 'CS201', 'course_sec': 'G', 'semester': 'Fall2018', 'course_unique': 'CS201-G-Fall2018'}, {'id': 15, 'course_name': 'data structures', 'course_short': 'DS', 'course_code': 'CS201', 'course_sec': 'C', 'semester': 'Fall2018', 'course_unique': 'CS201-C-Fall2018'}]
+"""
+
 
 from application import current_semester
 from application import pdb
@@ -50,17 +55,18 @@ def pdb_ret_courses(rows):
         another_list.append({**temp_dict,**temp_cour})
 
     return another_list
+
+
 # Returns Pending Courses For Approval for teacher
 def pdb_ret_p_courses(list_courses):
-
+    course_list = []
     course_list_codes = []
     for each_course in list_courses:
-        course_list_codes.append(str(each_course['course_code']) + "-" + str(
-            each_course['course_sec']) + "-" + str(current_semester))
+        course_list.append(each_course['course_code'])
 
     all_cour = []
     pdb_Session = sessionmaker(pdb)
     pdbs = pdb_Session()
-    all_cour = ret_list( pdbs.query(courses).filter(courses.course_code.in_(course_list) ).all())
+    all_cour = ret_list( pdbs.query(p_stud).filter(p_stud.course_code.in_(course_list) ).all())
 
     return all_cour
