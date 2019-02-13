@@ -70,3 +70,26 @@ def pdb_ret_p_courses(list_courses):
     all_cour = ret_list( pdbs.query(p_stud).filter(p_stud.course_code.in_(course_list) ).all())
 
     return all_cour
+
+def pdb_ret_course_name_take_code(list_courses):
+    
+    course_list_codes = []
+    for each_course in list_courses:
+        course_list_codes.append(str(each_course['course_code']))
+    all_cour = []
+    pdb_Session = sessionmaker(pdb)
+    pdbs = pdb_Session()
+    all_cour = ret_list( pdbs.query(courses).filter(courses.course_code.in_(course_list_codes) ).all())
+
+    cnt = 0
+    course_dict_list2 = []
+    course_name_w_sec = " "
+    for x in course_list_codes:
+        temp_course_list = next(i for i in all_cour if i["course_code"] == x)
+        # print(temp_course_list)
+        course_name_w_sec += (str(temp_course_list["course_short"].upper(
+        ) + "-" + str(list_courses[cnt]['section']) + "|"))
+        cnt = cnt+1
+
+    # print(course_dict_list2)
+    return course_name_w_sec

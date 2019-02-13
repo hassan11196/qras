@@ -409,13 +409,13 @@ def login_mobile_student_post():
         # active_courses = ret_courses_reg(active_course_codes)
         
         
-        active_course_codes = ret_list(pdbs.query(a_stud).filter(a_stud.roll_num == session['student_roll_num']).all())
+        active_course_codes = ret_list(pdb_session.query(a_stud).filter(a_stud.roll_num == session['student_roll_num']).all())
 
         active_courses = pdb_ret_courses_reg(active_course_codes)
 
         # !! pending_course_codes = db.execute(
         #     "SELECT * FROM p_stud WHERE roll_num=:roll_t", roll_t=session['student_roll_num'])
-        pending_course_codes = ret_list(pdbs.query(p_stud).filter(p_stud.roll_num == session['student_roll_num']).all())
+        pending_course_codes = ret_list(pdb_session.query(p_stud).filter(p_stud.roll_num == session['student_roll_num']).all())
         # !!pending_courses = pdb_ret_courses_take_code(pending_course_codes)
         pending_courses = pdb_ret_courses_reg(pending_course_codes)
 
@@ -427,9 +427,9 @@ def login_mobile_student_post():
 
         # flash(temp_str)
         # Redirect user to home page
-        course_name_w_section_active = pdb_ret_courses_reg(
+        course_name_w_section_active = pdb_ret_course_name_take_code(
             active_course_codes)
-        course_name_w_section_pending = pdb_ret_courses_reg(
+        course_name_w_section_pending = pdb_ret_course_name_take_code(
             pending_course_codes)
 
         print(course_name_w_section_active)
