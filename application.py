@@ -281,7 +281,7 @@ def s_qr():
         # !! update_stud = db.execute("UPDATE attendence SET attendence_time=:currtime_t,state=:type_t WHERE course_unique=:cuni_t AND roll_number=:roll_t AND class_date_t=:date_t AND state=:state_t",
         #                          currtime_t=curr_time, type_t="P", cuni_t=course_uni, roll_t=session['student_roll_num'], date_t=date_time, state_t="A")
 
-        update_stud = pdb_session.query(attendance).filter(attendance.course_unique == course_uni, attendance.roll_number == session['student_roll_num'], attendance.class_date_t == date_time, attendance.state == "A")
+        update_stud = pdb_session.query(attendance).filter(attendance.course_unique == course_uni, attendance.roll_num == session['student_roll_num'], attendance.class_date_t == date_time, attendance.state == "A")
         
         if not update_stud:
             print("Attendence NOT UPDATED")
