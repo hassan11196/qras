@@ -281,15 +281,15 @@ def s_qr():
         # !! update_stud = db.execute("UPDATE attendence SET attendence_time=:currtime_t,state=:type_t WHERE course_unique=:cuni_t AND roll_number=:roll_t AND class_date_t=:date_t AND state=:state_t",
         #                          currtime_t=curr_time, type_t="P", cuni_t=course_uni, roll_t=session['student_roll_num'], date_t=date_time, state_t="A")
 
-        update_stud = ret_list(pdb_session.query(attendance).filter(attendance.course_unique == course_uni, attendance.roll_num == session['student_roll_num'], attendance.class_date_t == date_time, attendance.state == "A").all())
+        update_stud = pdb_session.query(attendance).filter(attendance.course_unique == course_uni, attendance.roll_num == session['student_roll_num'], attendance.class_date_t == date_time, attendance.state == "A").all()
         
-        if not update_stud:
+        if not update_stud[0]:
             print("Attendence NOT UPDATED")
             pdb_session.close()
             return jsonify("NO Attendence or Attendence Already Marked", 400)
         else:
-            update_stud.attendance_time = curr_time
-            update_stud.state = "P"
+            update_stud[0].attendance_time = curr_time
+            update_stud[0].state = "P"
         
         pdb_session.commit()
 
