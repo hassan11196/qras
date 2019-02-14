@@ -111,7 +111,7 @@ class attendance(base):
     duration = Column(Integer)
 
     def __init__(self, **kwargs):
-        if len(kwargs.keys() >= 9):
+        if len(kwargs.keys()) >= 9:
             self.student_name = kwargs['student_name']
             self.roll_num = kwargs['roll_num']
             self.student_class = kwargs['student_class']
