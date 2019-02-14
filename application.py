@@ -283,13 +283,14 @@ def s_qr():
 
         update_stud = pdb_session.query(attendance).filter(attendance.course_unique == course_uni, attendance.roll_num == session['student_roll_num'], attendance.class_date_t == date_time, attendance.state == "A").all()
         
-        if not update_stud[0]:
+        if not update_stud:
             print("Attendence NOT UPDATED")
             pdb_session.close()
             return jsonify("NO Attendence or Attendence Already Marked", 400)
         else:
             print(update_stud)
-            print(update_stud[0])
+            for stud in update_stud:    
+                print(stud)
             update_stud[0].attendance_time = curr_time
             update_stud[0].state = "P"
         
