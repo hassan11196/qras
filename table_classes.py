@@ -96,7 +96,7 @@ class active_courses(base):
 
 class attendance(base):
     __tablename__ = "attendance"
-    id = Column(String, primary_key=True)
+    id = Column(String, primary_key=True, unique=True)
     roll_num = Column(String)
     student_name = Column(String)
     student_class = Column(String)
