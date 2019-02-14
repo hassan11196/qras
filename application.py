@@ -835,7 +835,7 @@ def mart_att():
             #            id_t=str(curr_time) + "|" + str(x['roll_num']), roll_t=x['roll_num'], sname_t=x['student_name'], scode_t=x['course_code'], c_datet_t=str(curr_date), csec_t=x['section'],
             #            tname=x['teacher_name'], att_t=str("Not Marked"), type_t="A", csem_t=x['semester'], cuni_t=course_uni, tmail_t=x['teacher_mail'], cdur_t=int(hours))
             insert_student = attendance(id = str(curr_time) + "|" + str(x['roll_num']), roll_num = x['roll_num'], student_name=x['student_name'], student_class=x['course_code'], class_date_t=str(curr_date), section=x['section'],
-                       teacher_name=x['teacher_name'], attendance_time=str("Not Marked"), status="A", semester=x['semester'], course_unique=course_uni, teacher_mail=x['teacher_mail'], duration=int(hours))
+                       teacher_name=x['teacher_name'], attendance_time=str("Not Marked"), state="A", semester=x['semester'], course_unique=course_uni, teacher_mail=x['teacher_mail'], duration=int(hours))
             pdb_session.add(insert_student)
         pdb_session.commit() 
         flash(temp_str)
