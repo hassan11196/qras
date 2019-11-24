@@ -147,6 +147,7 @@ def ret_courses_take_code(list_courses):
     all_cour = []
     all_cour = db.execute(
         "SELECT * FROM courses WHERE course_code IN(" + course_str + ")")
+        
 
     cnt = 0
     course_dict_list2 = []

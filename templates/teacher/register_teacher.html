@@ -12,11 +12,11 @@
 </script>
 <script>
     function resp_shorts(){
-      var course_index = document.getElementById("s_cname").value;
-      var sel = document.getElementById("s_cshort");
-     sel.selectedIndex=course_index;
-     var sel2 = document.getElementById("s_ccode");
-     sel2.selectedIndex=course_index;
+        var course_index = document.getElementById("s_cname").value;
+        var sel = document.getElementById("s_cshort");
+        sel.selectedIndex=course_index;
+        var sel2 = document.getElementById("s_ccode");
+        sel2.selectedIndex=course_index;
     }
 
 </script>
@@ -55,42 +55,13 @@
                 </tbody>
             </table>
         </div>
-        <!--
-        <h1 align="left" id="headi">Please Select Courses :  </h1>
-        <div class="table-responsive">
 
-                        <table class = "table table-striped table-bordered">
-                            <thead>
-                                <tr>
-                                <th>Sr.#</th>
-                                <th>Course Name</th>
-                                <th>Short Name</th>
-                                <th>Course Code</th>
-                                <th>Section (A/A1/GR1)</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                            {%for i in courses%}
-                            <tr>
-                                <th scope="row">{{i['id']}}.</th>
-                                <td>{{i['course_name'].title()}}</td>
-                                <td>{{i['course_short']}}</td>
-                                <td >{{i['course_code']}}</td>
-                                <td>
-                                <input form="comp" class="form-control" name="{{i['course_code']}}" pattern="([A-Z]{1}|[A-Z1-9]{2}|GR[0-9]{1})" size="10" maxlength="5" id="{{i['course_code']}}" placeholder="A or A1 or GR1"/>
-                                </td>
-                            </tr>
-                            {%endfor%}
-                            </tbody>
-                        </table>
-        </div>
-        -->
         <script>
             var x = document.getElementById("reg_courses");
             x.style.display = "none";
 
         </script>
+
         <h1 align="left">Select Courses</h1>
         <div class="table-responsive">
             <table class="table table-bordered">
@@ -107,14 +78,31 @@
 
                     <tr>
                         <td style="width:130px">
+
                             <select style="width:200px" onchange="resp_shorts()" class="form-control" id="s_cname" name="select_courses">
 
                                     <option selected>Select Course</option>
-                                    {%for i in courses%}
+                                    <!-- {%for i in courses%}
                                     <option value = "{{i['id']}}"> {{i["course_name"].title()}} </option>
-                                    {%endfor%}
+                                    {%endfor%} -->
+                                    <script>
+                                    var j_courses = {{courses | tojson}};
+
+                                    console.table(j_courses);
+                                    var select = document.getElementById("s_cname");
+
+                                    for (i in j_courses){
+                                        var opt = document.createElement("option");
+                                        opt.value = j_courses[i].id;
+                                        opt.textContent = j_courses[i].course_name;
+                                        select.appendChild(opt);
+                                    }
+
+
+                                </script>
 
                             </select>
+
                         </td>
                         <td>
                             <select disabled class="form-control" id="s_cshort" name="select_courses_short">

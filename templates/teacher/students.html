@@ -8,105 +8,66 @@
 
 <h1  align = "left">Students Registered in my classes for FALL2018</h1>
 <br>
-<!--<div class="table-responsive" class="card-body">-->
-<!--    <table class="table table-striped table-hover">-->
-<!--        {% if ac[0] %}-->
-<!--        <thead>-->
-<!--            <th>Sr. #</th>-->
-<!--            <th>Student Name</th>-->
-<!--            <th>Roll Number</th>-->
-<!--            <th>Semester</th>-->
-<!--            <th>Batch</th>-->
-<!--            <th>Course</th>-->
-<!--            <th>Course Section</th>-->
-
-
-<!--        </thead>-->
-<!--        {% else %}-->
-<!--            <tr><td colspan = "7"><h2>No Students</h2></td></tr>-->
-<!--        {% endif %}-->
-<!--        <tbody>-->
-<!--            {%for i in ac%}-->
-<!--                {%if i%}-->
-<!--                    <tr>-->
-<!--                        <td>{{ac.index(i) + 1}}</td>-->
-<!--                        <td>{{i['student_name'].title()}}</td>-->
-<!--                        <td>{{i['roll_num'].upper()}}</td>-->
-<!--                        <td>{{i['semester']}}</td>-->
-<!--                        <td>{{i['batch']}}</td>-->
-<!--                        <td>{{i['course_code']}}</td>-->
-<!--                        <td>{{i['section']}}</td>-->
-
-
-
-<!--                    </tr>-->
-<!--                {% elif not i %}-->
-<!--                    <tr><td colspan = "7"><h2>No Students</h2></td></tr>-->
-
-<!--                {%endif%}-->
-
-<!--            {%endfor%}-->
-<!--        </tbody>-->
-<!--    </table>-->
-<!--</div>-->
-
-
-<!--<h1  align = "left"> Registered Courses </h1>-->
-
-<div class="accordian" id="accordian_courses">
-    {%for x in cc%}
-        <div class="card">
-            <div class="card-header">
-                <h2 class="mb-0">
-                    <button class="btn btn-outline-info btn-lg btn-block" style="white-space: normal !important;word-wrap: break-word !important;" type="button" data-toggle="collapse" aria-expanded="false" data-target="#{{x['course_unique']}}">
-                        {{x['course_name'].title()}} - {{x['course_sec']}} - {{x['semester']}}
-                    </button>
-                </h2>
-            </div>
-            <div id="{{x['course_unique']}}" class="collapse" data-parent="accordian_courses">
-                <div class="card-body">
-                    <div class="table-responsive" class="card-body">
-                        <table class="table table-striped table-hover">
-                            <thead>
-                                <th>Sr. #</th>
-                                <th>Student Name</th>
-                                <th>Roll Number</th>
-                                <th>Semester</th>
-                                <th>Batch</th>
-                                <th>Course</th>
-                                <th>Course Section</th>
-                            </thead>
-                            <tbody>
-                                {%for z in nc[cc.index(x)]%}
-                                    {%if z%}
-
-
-                                        <tr>
-                                            <td>{{nc[cc.index(x)].index(z) + 1}}</td>
-                                            <td>{{z['student_name'].title()}}</td>
-                                            <td>{{z['roll_num'].upper()}}</td>
-                                            <td>{{z['semester']}}</td>
-                                            <td>{{z['batch']}}</td>
-                                            <td>{{z['course_code']}}</td>
-                                            <td>{{z['section']}}</td>
-                                        </tr>
-
-                                    {%endif%}
-                                {%endfor%}
-                            </tbody>
-                        </table>
-                    </div>
-
-                </div>
-            </div>
-
-        </div>
-    {%endfor%}
+<div class="accordian" id="j_accordian_courses">
+    <script type="text/javascript" src="{{ url_for('static', filename='jsstudents.js') }}">
+    </script>
+    <script>
+            var outer_div = document.getElementById("j_accordian_courses");
+            var j_cc = {{cc | tojson}};
+            var j_nc = {{nc | tojson}};
+            display_courses(outer_div, j_cc,j_nc);
+    </script>
 </div>
 
+<!--<div class="accordian" id="accordian_courses">-->
+<!--    {%for x in cc%}-->
+<!--        <div class="card">-->
+<!--            <div class="card-header">-->
+<!--                <h2 class="mb-0">-->
+<!--                    <button class="btn btn-outline-info btn-lg btn-block" style="white-space: normal !important;word-wrap: break-word !important;" type="button" data-toggle="collapse" aria-expanded="false" data-target="#{{x['course_unique']}}">-->
+<!--                        {{x['course_name'].title()}} - {{x['course_sec']}} - {{x['semester']}}-->
+<!--                    </button>-->
+<!--                </h2>-->
+<!--            </div>-->
+<!--            <div id="{{x['course_unique']}}" class="collapse" data-parent="accordian_courses">-->
+<!--                <div class="card-body">-->
+<!--                    <div class="table-responsive" class="card-body">-->
+<!--                        <table class="table table-striped table-hover">-->
+<!--                            <thead>-->
+<!--                                <th>Sr. #</th>-->
+<!--                                <th>Student Name</th>-->
+<!--                                <th>Roll Number</th>-->
+<!--                                <th>Semester</th>-->
+<!--                                <th>Batch</th>-->
+<!--                                <th>Course</th>-->
+<!--                                <th>Course Section</th>-->
+<!--                            </thead>-->
+<!--                            <tbody>-->
+<!--                                {%for z in nc[cc.index(x)]%}-->
+<!--                                    {%if z%}-->
 
 
+<!--                                        <tr>-->
+<!--                                            <td>{{nc[cc.index(x)].index(z) + 1}}</td>-->
+<!--                                            <td>{{z['student_name'].title()}}</td>-->
+<!--                                            <td>{{z['roll_num'].upper()}}</td>-->
+<!--                                            <td>{{z['semester']}}</td>-->
+<!--                                            <td>{{z['batch']}}</td>-->
+<!--                                            <td>{{z['course_code']}}</td>-->
+<!--                                            <td>{{z['section']}}</td>-->
+<!--                                        </tr>-->
 
+<!--                                    {%endif%}-->
+<!--                                {%endfor%}-->
+<!--                            </tbody>-->
+<!--                        </table>-->
+<!--                    </div>-->
 
+<!--                </div>-->
+<!--            </div>-->
+
+<!--        </div>-->
+<!--    {%endfor%}-->
+<!--</div>-->
 
 {% endblock %}

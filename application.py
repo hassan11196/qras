@@ -1,4 +1,3 @@
-
 import calendar
 import os
 from datetime import datetime
@@ -25,15 +24,14 @@ from helpers import (apology, login_required, lookup, student_login_required,
 from sqlalchemy import create_engine, Column, String, Integer
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from pprint import pprint
 
 # For colored output on terminal
 colorama.init()
 
-
 # Set Current Semester
 semester_list = ["Fall", "Spring", "Summer"]
 current_semester = str(semester_list[0]) + str(2018)
-
 
 # using SendGrid's Python Library
 # https://github.com/sendgrid/sendgrid-python
@@ -51,7 +49,6 @@ import logging
 logging.basicConfig(filename='error.log', level=logging.DEBUG)
 """
 
-
 # Ensure responses aren't cached
 @app.after_request
 def after_request(response):
@@ -60,7 +57,6 @@ def after_request(response):
     response.headers["Pragma"] = "no-cache"
 
     return response
-
 
 # Configure session to use filesystem (instead of signed cookies)
 app.config["SESSION_FILE_DIR"] = mkdtemp()
@@ -74,12 +70,12 @@ db = SQL("sqlite:///finance.db")
 
 # Setting up postgres DataBase
 db_string = str(os.environ.get('POSTGRESQL_DB_URI'))
-#db_string = "sqlite:///finance.db"
 pdb = create_engine(db_string)
-from table_classes import *
+#db_string = "sqlite:///finance.db"
+
+from table_classes import attendance, a_stud, p_stud, courses, students
 from course_parser import *
 from pdb_parsers import *
-
 
 @app.route("/students/", methods=["GET"])
 def all_students_from_pdb():
@@ -117,21 +113,18 @@ def all_pending_stud():
     p_stud_list = []
     for pending_stud in all_pending_s:
         p_stud_list.append(pending_stud.data_dict())
+    pdb_session.close()
     return jsonify(p_stud_list)
 
 
 @app.route("/course/<cour>", methods=["GET"])
 def course_detail(cour):
-    c = db.execute("SELECT * FROM courses WHERE course_code=:co", co=cour)
-
-    return jsonify(c)
-
-
-@app.route("/course/<cour>/name", methods=["GET"])
-def course_name_detail(cour):
-    c = db.execute(
-        "SELECT course_name FROM courses WHERE course_code=:co", co=cour)
-
+    cour = cour.upper()
+    pdb_Session = sessionmaker(pdb)
+    pdb_session = pdb_Session()
+    c = ret_list(pdb_session.query(courses).filter(courses.course_code == cour).all())
+    # c = db.execute("SELECT * FROM courses WHERE course_code=:co", co=cour)
+    pdb_session.close()
     return jsonify(c)
 
 
@@ -153,7 +146,6 @@ def mail():
 
 
 @app.route("/about", methods=["GET", "POST"])
-@login_required
 def about():
     return render_template("about.html")
 
@@ -166,6 +158,7 @@ def active_cour():
         pdb_s = pdb_Session()
         cour_query_list = pdb_s.query(active_courses).all()
         pdb_active_courses = ret_list(cour_query_list)
+        pdb_s.close()
         return render_template("active_courses.html", ac=pdb_active_courses)
 
 
@@ -184,6 +177,7 @@ def active_stud():
 @app.route("/")
 @login_required
 def index():
+    print("Index Page")
     return redirect("/login")
 
 
@@ -209,8 +203,12 @@ def s_qr():
         data_str = request.form.get("qr_scan")
         rollnum = request.form.get("rollnumber")
         data = data_str.split("|")
-        student = db.execute(
-            "SELECT * FROM STUDENTS where roll_num=:roll", roll=rollnum)
+        pdb_Session = sessionmaker(pdb)
+        pdb_session = pdb_Session()
+        student = ret_list(pdb_session.query(students).filter(students.roll_num == rollnum).all())
+
+        # !! student = db.execute(
+        #     "SELECT * FROM STUDENTS where roll_num=:roll", roll=rollnum)
         if not student:
             return jsonify("Rollnumber Not Registered.", 200)
         print("Data Recevied From Mobile : " + str(data))
@@ -222,12 +220,18 @@ def s_qr():
         session["student_id"] = student[0]["id"]
         session["student_roll_num"] = roll_num
 
-        active_course_codes = db.execute(
-            "SELECT * FROM a_stud WHERE roll_num=:roll_t", roll_t=session['student_roll_num'])
-        active_courses = ret_courses_reg(active_course_codes)
-        pending_course_codes = db.execute(
-            "SELECT * FROM p_stud WHERE roll_num=:roll_t", roll_t=session['student_roll_num'])
-        pending_courses = ret_courses_take_code(pending_course_codes)
+        # !! active_course_codes = db.execute(
+        #     "SELECT * FROM a_stud WHERE roll_num=:roll_t", roll_t=session['student_roll_num'])
+        active_course_codes = ret_list(pdb_session.query(a_stud).filter(a_stud.roll_num == session['student_roll_num']).all())
+
+        active_courses = pdb_ret_courses_reg(active_course_codes)
+
+        # !! pending_course_codes = db.execute(
+        #     "SELECT * FROM p_stud WHERE roll_num=:roll_t", roll_t=session['student_roll_num'])
+
+        pending_course_codes = ret_list(pdb_session.query(p_stud).filter(p_stud.roll_num == session['student_roll_num']).all())
+
+        pending_courses = pdb_ret_courses_reg(pending_course_codes)
         session["courses_student_pending"] = pending_courses
         session["courses_student_registered"] = active_courses
         # print(student[0]['courses_reg'])
@@ -270,18 +274,30 @@ def s_qr():
         minutes_diff = (datetime_end - datetime_start).total_seconds() / 60.0
         print("Minutes Diff : " + str(minutes_diff))
         if(int(minutes_diff) > int(data[7])):
-            print("Time Diff Greate")
+            print("Time Diff Greater")
+            pdb_session.close()
             return jsonify("Attendence Closed", 400)
 
-        update_stud = db.execute("UPDATE attendence SET attendence_time=:currtime_t,state=:type_t WHERE course_unique=:cuni_t AND roll_number=:roll_t AND class_date_t=:date_t AND state=:state_t",
-                                 currtime_t=curr_time, type_t="P", cuni_t=course_uni, roll_t=session['student_roll_num'], date_t=date_time, state_t="A")
+        # !! update_stud = db.execute("UPDATE attendence SET attendence_time=:currtime_t,state=:type_t WHERE course_unique=:cuni_t AND roll_number=:roll_t AND class_date_t=:date_t AND state=:state_t",
+        #                          currtime_t=curr_time, type_t="P", cuni_t=course_uni, roll_t=session['student_roll_num'], date_t=date_time, state_t="A")
 
+        update_stud = pdb_session.query(attendance).filter(attendance.course_unique == course_uni, attendance.roll_num == session['student_roll_num'], attendance.class_date_t == date_time, attendance.state == "A").all()
+        
         if not update_stud:
             print("Attendence NOT UPDATED")
+            pdb_session.close()
             return jsonify("NO Attendence or Attendence Already Marked", 400)
+        else:
+            print(update_stud)
+            for stud in update_stud:    
+                print(stud)
+            update_stud[0].attendance_time = curr_time
+            update_stud[0].state = "P"
+        
+        pdb_session.commit()
 
         #print("cour_student = " + str(cour_student))
-
+        pdb_session.close()
         return jsonify("Attendence Marked.", 200)
 
 
@@ -298,23 +314,26 @@ def mobile_student_attendence():
         elif not request.form.get("password"):
             return apology("must provide password", 400)
 
-        print(request.form.get("password"))
-
+        pdb_Session = sessionmaker(pdb)
+        pdb_session = pdb_Session() 
         # Query database for username
         rows = db.execute("SELECT * FROM students WHERE roll_num = :username",
                           username=(request.form.get("rollnumber")).lower())
 
         if(not rows):
             print("Invalid Roll Number")
+            pdb_session.close()
             return jsonify("Invalid Roll Number")
         print(rows[0])
         if(len(rows) != 1):
             print("Invalid Roll Number")
+            pdb_session.close()
             return jsonify("Roll Number Not Registered.")
 
         # Ensure username exists and password is correct
         if len(rows) != 1 or not check_password_hash(rows[0]["password"], request.form.get("password")):
             print("Invalid password")
+            pdb_session.close()
             return jsonify("invalid password")
 
         roll_num = request.form.get("rollnumber")
@@ -334,6 +353,7 @@ def mobile_student_attendence():
         session["courses_student_pending"] = pending_courses
         session["courses_student_registered"] = active_courses
 
+        pdb_session.close()
         return redirect("/student/view")
 
 
@@ -352,40 +372,57 @@ def login_mobile_student_post():
         elif not request.form.get("password"):
             return apology("must provide password", 400)
 
-        print(request.form.get("password"))
+        pdb_Session = sessionmaker(pdb)
+        pdb_session = pdb_Session()
 
         # Query database for username
-        rows = db.execute("SELECT * FROM students WHERE roll_num = :username",
-                          username=(request.form.get("rollnumber")).lower())
+        # !! rows = db.execute("SELECT * FROM students WHERE roll_num = :username",
+        #                   username=(request.form.get("rollnumber")).lower())
+
+        rows = ret_list(pdb_session.query(students).filter(students.roll_num == request.form.get("rollnumber").lower()).all())
 
         if(not rows):
             print("Invalid Roll Number")
+            pdb_session.close()
             return jsonify("Invalid Roll Number")
         print(rows[0])
         if(len(rows) != 1):
+            pdb_session.close()
             print("Invalid Roll Number")
             return jsonify("Roll Number Not Registered.")
 
         # Ensure username exists and password is correct
         if len(rows) != 1 or not check_password_hash(rows[0]["password"], request.form.get("password")):
             print("Invalid password")
+            pdb_session.close()
             return jsonify("invalid password")
 
         roll_num = request.form.get("rollnumber")
 
-        course_dict_list2 = ret_courses(rows)
+        course_dict_list2 = pdb_ret_courses(rows)
         print("LOGIN BY : " + str(course_dict_list2))
         # Remember which user has logged in
         session["user_id"] = rows[0]["id"]
         session["student_id"] = rows[0]["id"]
         session["student_roll_num"] = roll_num
         session["courses_student"] = course_dict_list2
-        active_course_codes = db.execute(
-            "SELECT * FROM a_stud WHERE roll_num=:roll_t", roll_t=session['student_roll_num'])
-        active_courses = ret_courses_reg(active_course_codes)
-        pending_course_codes = db.execute(
-            "SELECT * FROM p_stud WHERE roll_num=:roll_t", roll_t=session['student_roll_num'])
-        pending_courses = ret_courses_take_code(pending_course_codes)
+
+        # !! active_course_codes = db.execute(
+        #     "SELECT * FROM a_stud WHERE roll_num=:roll_t", roll_t=session['student_roll_num'])
+        # active_courses = ret_courses_reg(active_course_codes)
+        
+        
+        active_course_codes = ret_list(pdb_session.query(a_stud).filter(a_stud.roll_num == session['student_roll_num']).all())
+
+        active_courses = pdb_ret_courses_reg(active_course_codes)
+
+        # !! pending_course_codes = db.execute(
+        #     "SELECT * FROM p_stud WHERE roll_num=:roll_t", roll_t=session['student_roll_num'])
+        pending_course_codes = ret_list(pdb_session.query(p_stud).filter(p_stud.roll_num == session['student_roll_num']).all())
+        # !!pending_courses = pdb_ret_courses_take_code(pending_course_codes)
+        pending_courses = pdb_ret_courses_reg(pending_course_codes)
+
+
         session["courses_student_pending"] = pending_courses
         session["courses_student_registered"] = active_courses
         print("Registered Course ->> " +
@@ -393,15 +430,15 @@ def login_mobile_student_post():
 
         # flash(temp_str)
         # Redirect user to home page
-        course_name_w_section_active = ret_course_name_take_code(
+        course_name_w_section_active = pdb_ret_course_name_take_code(
             active_course_codes)
-        course_name_w_section_pending = ret_course_name_take_code(
+        course_name_w_section_pending = pdb_ret_course_name_take_code(
             pending_course_codes)
 
         print(course_name_w_section_active)
         print(course_name_w_section_pending)
 
-        return jsonify(str(rows[0]['student_name']) + "," + str(len(active_course_codes)) + "," + str(course_name_w_section_active)
+        return jsonify(str(rows[0]['student_name'].title()) + "," + str(len(active_course_codes)) + "," + str(course_name_w_section_active)
                        + "," + str(len(pending_course_codes)) + "," + str(course_name_w_section_pending))
 
     return redirect("/student_home")
@@ -477,13 +514,14 @@ def teacher_approve():
         pdbs = pdb_Session()
         from_p = ret_list(pdbs.query(p_stud).filter(p_stud == roll_num and p_stud.course_unique == course_uni).all())
         approved_student = a_stud(student_name = sname,roll_num = roll_num,batch = sbatch, course_code = ccode,
-                                semester = csem, course_unique = course_uni, teacher_name = session['teacher_name'], section = csec, teacher_mail=session['teacher_mail']) 
+                                semester = csem, course_unique = course_uni, teacher_name = session['teacher_name'], section = csec, teacher_mail=session['teacher_mail'])
         pdbs.add(approved_student)
         pdbs.query(p_stud).filter(p_stud.roll_num == roll_num and p_stud.course_unique == course_uni).delete()
 
 
         courses_complete = session["courses_teacher"]
         course_to_approve = pdb_ret_p_courses(courses_complete)
+        pdbs.close();
         return render_template("teacher/approve.html", refresh=redirect, cc=courses_complete, ac=course_to_approve)
 
     if request.method == "GET":
@@ -499,11 +537,15 @@ def teacher_view():
         courses_complete = session['courses_teacher']
         attendence_courses = []
         sadi_attendence = []
+        pdb_Session = sessionmaker(pdb)
+        pdb_session = pdb_Session()
         for x in courses_complete:
-            temp = db.execute("SELECT * FROM attendence WHERE teacher_mail=:tmail_t AND course_unique=:cunit_t",
-                              tmail_t=session['teacher_mail'], cunit_t=str(x['course_code'] + "-" + x['course_sec'] + "-" + x['semester']))
-            
-            sadi_attendence.append(temp)
+            # !! temp = db.execute("SELECT * FROM attendence WHERE teacher_mail=:tmail_t AND course_unique=:cunit_t",
+            #                   tmail_t=session['teacher_mail'], cunit_t=str(x['course_code'] + "-" + x['course_sec'] + "-" + x['semester']))
+            temp = ret_list(
+                pdb_session.query(attendance).filter(
+                    attendance.teacher_mail == session['teacher_mail'], attendance.course_unique == str(x['course_code'] + "-" + x['course_sec'] + "-" + x['semester'])).all())
+    
             date_list = {}
             if temp:
                 i = 0
@@ -512,14 +554,14 @@ def teacher_view():
                     t_list = []
                     date_temp = temp[i]['class_date_t']
                     while i < len(temp) and date_temp == temp[i]['class_date_t']:
-                        print(temp[i])
+                        
                         t_list.append(temp[i])
                         i = i+1
                         flag = 1
                     date_list[date_temp] = t_list
                     if flag == 0:
                         i = i+1
-                print("date list : " + str(date_list))
+                
             attendence_courses.append(date_list)
         # print("Course_complete :")
         # print(courses_complete)
@@ -530,7 +572,8 @@ def teacher_view():
         key_list = []
         for i in range(0, len(attendence_courses)):
             key_list.append(list(attendence_courses[i].keys()))
-
+        
+        pdb_session.close()
         return render_template("teacher/view.html", cc=courses_complete, ac=sadi_attendence, nc=attendence_courses, kl=key_list)
 
 
@@ -541,17 +584,18 @@ def teacher_students():
         only_courses = session['courses_teacher']
         print(only_courses)
         my_list = []
+        my_prev = []
+        pdb_Session = sessionmaker(pdb)
+        pdbs = pdb_Session()
         for x in only_courses:
-            temp = db.execute("SELECT * FROM a_stud WHERE teacher_mail=:tmail_t AND semester=:tsem_t AND course_unique=:ccode_t",
-                              tmail_t=session["teacher_mail"], tsem_t=current_semester, ccode_t=x['course_unique'])
-            my_list.append(temp)
-        all_info = ret_courses_section_take_code(only_courses)
-        print(all_info)
-        print("nc: " + str(my_list))
-        my = db.execute("SELECT * FROM a_stud WHERE teacher_mail=:tmail_t AND semester=:tsem_t",
-                        tmail_t=session["teacher_mail"], tsem_t=current_semester)
 
-        return render_template("teacher/students.html", ac=my, cc=only_courses, nc=my_list)
+            temp2 = ret_list(pdbs.query(a_stud).filter(a_stud.teacher_mail == session["teacher_mail"],a_stud.semester == current_semester,a_stud.course_unique == x['course_unique']).all())
+
+            my_list.append(temp2)
+        all_info = pdb_ret_courses_reg(only_courses)
+        
+        my2 = ret_list(pdbs.query(a_stud).filter(a_stud.teacher_mail == session["teacher_mail"] and a_stud.semester == current_semester ))
+        return render_template("teacher/students.html", ac=my2, cc=only_courses, nc=my_list)
 
 
 @app.route("/student/view", methods=["GET"])
@@ -561,9 +605,12 @@ def student_view():
         courses_complete = session['courses_student']
         attendence_courses = []
         sadi_attendence = []
+        pdb_Session = sessionmaker(pdb)
+        pdb_session = pdb_Session()
         for x in courses_complete:
-            temp = db.execute("SELECT * FROM attendence WHERE roll_number=:troll_t AND course_unique=:cunit_t",
-                              troll_t=session['student_roll_num'], cunit_t=str(x['course_code'] + "-" + x['course_sec'] + "-" + x['semester']))
+            temp = ret_list(pdb_session.query(attendance).filter(attendance.roll_num == session['student_roll_num'], attendance.course_unique == str(x['course_code'] + "-" + x['course_sec'] + "-" + x['semester'])).all())
+            # !! temp = db.execute("SELECT * FROM attendence WHERE roll_number=:troll_t AND course_unique=:cunit_t",
+            #                   troll_t=session['student_roll_num'], cunit_t=str(x['course_code'] + "-" + x['course_sec'] + "-" + x['semester']))
             sadi_attendence.append(temp)
             date_list = {}
             if temp:
@@ -609,7 +656,7 @@ def login():
     # Forget any user_id
     session.clear()
     # User reached route via GET (as by clicking a link or via redirect)
-    flash("Welcome")
+    flash("Welcome - Site Currently under further develpoment, current storage is not permanent")
     return render_template("login.html")
 
 
@@ -628,12 +675,12 @@ def login_student():
 
         # Query database for username
         # !! rows = db.execute("SELECT * FROM students WHERE roll_num = :username",
-        #                   username=(request.form.get("rollnumber")).lower()) 
+        #                   username=(request.form.get("rollnumber")).lower())
         pdb_Session = sessionmaker(pdb)
         pdbs = pdb_Session()
 
         rows = ret_list(pdbs.query(students).filter(students.roll_num == (request.form.get("rollnumber")).lower()).all())
-                          
+
         if(len(rows) != 1):
             return apology("Roll Number Not Registered.", 400)
 
@@ -642,7 +689,7 @@ def login_student():
             return apology("invalid roll number and/or password", 400)
 
         course_dict_list2 = []
-        course_dict_list2 = ret_courses(rows)
+        course_dict_list2 = pdb_ret_courses(rows)
 
         roll_num = request.form.get("rollnumber")
 
@@ -675,14 +722,21 @@ def login_teacher():
         elif not request.form.get("password"):
             return apology("must provide password", 400)
 
+        pdb_Session = sessionmaker(pdb)
+        pdb_session = pdb_Session()
+
         # Query database for username
-        rows = db.execute("SELECT * FROM teachers WHERE teacher_mail = :t",
-                          t=(request.form.get("teacher_mail")).lower())
+        # !! rows = db.execute("SELECT * FROM teachers WHERE teacher_mail = :t",
+        #                   t=(request.form.get("teacher_mail")).lower())
+        rows = ret_list(pdb_session.query(teachers).filter(teachers.teacher_mail == (request.form.get("teacher_mail")).lower()).all())
+
         if(len(rows) != 1):
+            pdb_session.close()
             return apology("Teacher Not Registered.", 400)
 
         # Ensure username exists and password is correct
         if len(rows) != 1 or not check_password_hash(rows[0]["password"], request.form.get("password")):
+            pdb_session.close()
             return apology("invalid NU mail id and/or password", 400)
 
         # Remember which user has logged in
@@ -690,50 +744,13 @@ def login_teacher():
         session["teacher_id"] = rows[0]["id"]
         session['teacher_mail'] = rows[0]['teacher_mail']
 
-        stud = db.execute("SELECT * FROM teachers WHERE id=:id_",
-                          id_=session['teacher_id'])
+        # !! stud = db.execute("SELECT * FROM teachers WHERE id=:id_",
+        #                   id_=session['teacher_id'])
 
-        """
-        #print(stud[0])
-        cour = stud[0]['courses_reg'].split("|")
-        #print(cour)
-        c_sec_list = ret_sec(cour)
-        #print(c_sec_list)
-        course_list=[]
-        course_dict_list = []
-        course_dict_list2 = []
-        course_code_dict = {}
-        course_code_list = []
-        course_sec = {}
-        for each_course in cour:
-            temp = each_course.split("-")
-            course_code_dict[(temp[0])] = temp[1]
-            course_code_list.append(temp[0])
-            course_dict_list.append({temp[0]:temp[1]})
-            course_list.append(temp[0])
+        stud = ret_list(pdb_session.query(teachers).filter(teachers.id == session['teacher_id']).all())
 
-        #print("course_dict_list: " + str(course_dict_list))
-        #print("course_list: " + str(course_dict_list))
-        #print("course_code_dict : " + str(course_code_dict))
-        #print("course_code_list : " + str(course_code_list))
-        #print("courses:")
-        delimit="\",\""
-        course_str=delimit.join(course_list)
-        course_str=str("\"" + course_str + "\"")
-        print(course_str)
-        all_cour=[]
-        all_cour = db.execute("SELECT * FROM courses WHERE course_code IN(" + course_str + ")")
-        print("courses: " + str(all_cour))
-        cnt=0
-        for x in course_code_list:
-            temp_course_list=next(i for i in all_cour if i["course_code"]==x)
-            #print(temp_course_list)
-            course_dict_list2.append({"id":temp_course_list["id"],"course_name":temp_course_list["course_name"],"course_short":temp_course_list["course_short"],"course_code":temp_course_list["course_code"],"course_sec":c_sec_list[cnt]})
-            cnt=cnt+1
-        print(course_dict_list2)
-        """
         course_dict_list2 = []
-        course_dict_list2 = ret_courses(rows)
+        course_dict_list2 = pdb_ret_courses(rows)
         session["teacher_name"] = (rows[0]["teacher_name"]).lower()
         session["courses_teacher"] = course_dict_list2
 
@@ -741,6 +758,7 @@ def login_teacher():
                     str(rows[0]["teacher_name"]).title() + ".")
         flash(temp_str)
         # Redirect user to home page
+        pdb_session.close()
         return redirect("/teacher_home")
     else:
         if session.get("teacher_id"):
@@ -797,21 +815,32 @@ def mart_att():
         curr_date = str(datetime.now(pytz.timezone("Asia/Karachi")).date())
         curr_time = str(datetime.now(pytz.timezone("Asia/Karachi")).time())
 
-        students = db.execute("SELECT * FROM a_stud where course_unique=:cuni_t AND teacher_mail=:tmail_t",
-                              cuni_t=course_uni, tmail_t=session['teacher_mail'])
-        check_if_already_open = db.execute("SELECT * FROM attendence WHERE course_unique=:cuni_t AND teacher_mail=:tmail_t AND class_date_t=:date_t",
-                                           cuni_t=course_uni, tmail_t=session['teacher_mail'], date_t=curr_date)
+        pdb_Session = sessionmaker(pdb)
+        pdb_session = pdb_Session()
+
+        students = ret_list(pdb_session.query(a_stud).filter(a_stud.course_unique == course_uni, a_stud.teacher_mail == session['teacher_mail']).all())
+
+        # !! students = db.execute("SELECT * FROM a_stud where course_unique=:cuni_t AND teacher_mail=:tmail_t",
+        #                       cuni_t=course_uni, tmail_t=session['teacher_mail'])
+        # !! check_if_already_open = db.execute("SELECT * FROM attendence WHERE course_unique=:cuni_t AND teacher_mail=:tmail_t AND class_date_t=:date_t",
+        #                                    cuni_t=course_uni, tmail_t=session['teacher_mail'], date_t=curr_date)
+
+        check_if_already_open = ret_list(pdb_session.query(attendance).filter(attendance.course_unique == course_uni, attendance.teacher_mail == session['teacher_mail'], attendance.class_date_t == curr_date).all())
 
         if check_if_already_open:
             temp_str = temp_str + " Opened Earlier"
             flash(temp_str)
+            pdb_session.close()
             return render_template("teacher/mark_attendence.html", qr_c=pic)
         for x in students:
-            db.execute("INSERT INTO attendence (id,roll_number,student_name,student_class,class_date_t,section,class_teacher,state,attendence_time,semester,course_unique,teacher_mail,duration)\
-            VALUES(:id_t,:roll_t,:sname_t,:scode_t,:c_datet_t,:csec_t,:tname,:type_t,:att_t,:csem_t,:cuni_t,:tmail_t,:cdur_t)",
-                       id_t=str(curr_time) + "|" + str(x['roll_num']), roll_t=x['roll_num'], sname_t=x['student_name'], scode_t=x['course_code'], c_datet_t=str(curr_date), csec_t=x['section'],
-                       tname=x['teacher_name'], att_t=str("Not Marked"), type_t="A", csem_t=x['semester'], cuni_t=course_uni, tmail_t=x['teacher_mail'], cdur_t=int(hours))
-
+            # !! db.execute("INSERT INTO attendence (id,roll_number,student_name,student_class,class_date_t,section,class_teacher,state,attendence_time,semester,course_unique,teacher_mail,duration)\
+            # VALUES(:id_t,:roll_t,:sname_t,:scode_t,:c_datet_t,:csec_t,:tname,:type_t,:att_t,:csem_t,:cuni_t,:tmail_t,:cdur_t)",
+            #            id_t=str(curr_time) + "|" + str(x['roll_num']), roll_t=x['roll_num'], sname_t=x['student_name'], scode_t=x['course_code'], c_datet_t=str(curr_date), csec_t=x['section'],
+            #            tname=x['teacher_name'], att_t=str("Not Marked"), type_t="A", csem_t=x['semester'], cuni_t=course_uni, tmail_t=x['teacher_mail'], cdur_t=int(hours))
+            insert_student = attendance(id = str(curr_time) + "|" + str(x['roll_num']), roll_num = x['roll_num'], student_name=x['student_name'], student_class=x['course_code'], class_date_t=str(curr_date), section=x['section'],
+                       teacher_name=x['teacher_name'], attendance_time=str("Not Marked"), state="A", semester=x['semester'], course_unique=course_uni, teacher_mail=x['teacher_mail'], duration=int(hours))
+            pdb_session.add(insert_student)
+        pdb_session.commit() 
         flash(temp_str)
         return render_template("teacher/mark_attendence.html", qr_c=pic)
 
@@ -904,18 +933,6 @@ def register_student():
         flash(temp_str)
         return redirect("/login/student")
 
-        """ LEGACY CODE """
-        """
-        # For login
-        session["user_id"] = rows[0]['id']
-        session["student_id"] = rows[0]['id']
-
-        # Redirect user to home page
-        temp_str = (str(rows[0]["student_name"]).title() + " is Registered.")
-        print(temp_str)
-        flash(temp_str)
-        return redirect("/student_home")
-        """
     else:
         courses_data = db.execute("SELECT * FROM courses")
 
@@ -1042,3 +1059,8 @@ def errorhandler(e):
 # listen for errors
 for code in default_exceptions:
     app.errorhandler(code)(errorhandler)
+
+if __name__ == '__main__':
+        import os
+        port = int(os.environ.get('PORT', 80))
+        app.run(host='0.0.0.0', port=port)

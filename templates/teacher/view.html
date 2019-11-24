@@ -6,7 +6,7 @@
 
 {% block main %}
 
-<h1  align = "left"> Courses Attendence </h1>
+<h1  align = "left"> Courses Attendance </h1>
 {% set count = ['1'] %}
 <div class="accordian" id="accordian_courses">
     {%for x in cc%}
@@ -82,7 +82,7 @@
                                                                 <td>{{a['duration']}}  Hour(s)</td>
                                                                 <td style="text-align:center;">{{a['state']}}</td>
                                                                 <td>{{a['id'].split("|")[0].split(".")[0]}}</td>
-                                                                <td>{{a['attendence_time'].split(".")[0]}}</td>
+                                                                <td>{{a['attendance_time'].split(".")[0]}}</td>
                                                             </tr>
                                                         {% else %}
                                                             <tr><td colspan = "10"><h2>No Attendence Taken</h2></td></tr>

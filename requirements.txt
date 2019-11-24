@@ -9,3 +9,5 @@ pypng
 datetime
 pytz
 colorama
+psycopg2-binary
+pprint
